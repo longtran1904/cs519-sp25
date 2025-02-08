@@ -29,6 +29,12 @@ a kernel buffer. Inside the kernel, you will modify that data (for example,
 setting all bytes to **`1`**) before copying the updated contents back to user
 space.
 
+First Download the Linux kernel source code. For example, to download Linux 5.14:
+```
+wget https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.14.tar.xz
+tar -xf linux-5.14.tar.xz
+```
+
 To confirm that your system call is being invoked, you should insert a
 **`printk()`** statement in the new function’s body. Check the kernel log (e.g.,
 using `dmesg`) to see the message printed. Once you have verified that the
@@ -42,6 +48,13 @@ For practical guidance on how to integrate a new system call, refer to the follo
 - [Reference 2](https://macboypro.wordpress.com/2009/05/15/adding-a-custom-system-call-to-the-linux-os/)  
 
 (You can also find many additional resources online if you need further clarification.)
+
+### Compiling the Linux Kernel
+```
+chmod a+ux compile_kernel.sh
+cd linux-5.14
+./compile_kernel.sh
+```
 
 ---
 
