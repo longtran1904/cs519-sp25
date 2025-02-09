@@ -86,7 +86,7 @@ ensure accurate performance measurements—logging can skew timing results
 significantly.
 
 For practical guidance on how to integrate a new system call, refer to the following online resources:
-
+- [Main Reference](https://linux-kernel-labs.github.io/refs/pull/183/merge/lectures/syscalls.html) 
 - [Reference 1](https://shanetully.com/2014/04/adding-a-syscall-to-linux-3-14/)  
 - [Reference 2](https://macboypro.wordpress.com/2009/05/15/adding-a-custom-system-call-to-the-linux-os/)  
 
@@ -116,6 +116,7 @@ system call and time it when testing.
    - **From user to kernel**: Use safe copy functions like `copy_from_user()` to move data from the user buffer into a temporary kernel buffer.  
    - **In the kernel**: Change the data to some known value (`1`).  
    - **From kernel back to user**: Use `copy_to_user()` to write the modified data back to the user buffer.
+   - You can find more details here [copying to and from OS](https://linux-kernel-labs.github.io/refs/pull/183/merge/lectures/syscalls.html?highlight=copy_from_user)
 
 2. **Buffer Allocation and Initialization**  
    - Allocate the user-space buffer with `malloc()`.  
