@@ -24,7 +24,11 @@ trivial operations can impact system performance.
 First, download the Linux kernel source code. The `uname -r` command retrieves the current Linux version:
 
 ```
-sudo apt source linux-image-unsigned-$(uname -r)
+sudo apt-get update
+sudo sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
+
+//Do not use sudo for this step as it just downloads the source files
+apt source linux-image-unsigned-$(uname -r)
 ```
 
 Then, use our scripts to compile the kernel. The first script is a slower
@@ -37,7 +41,11 @@ First, navigate to the Linux source tree:
 cd linux-5.15.0
 ```
 
-Then run the installation script. Note, this is only for the first time installation of the kernel.
+Then run the installation script. 
+
+**Note, this script can be run only for the first time installation of the kernel.** 
+This script also installs a bunch of debian related packages required for compilation. The overall process can 
+take more than 30 to 40 minutes. 
 ```
 ../compile_os_slow.sh
 ```
