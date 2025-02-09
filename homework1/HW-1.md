@@ -10,14 +10,28 @@ invokes a system call.
 
 In this project, you will explore the mechanics and
 overhead associated with system calls by creating and measuring the performance
-of a custom (dummy) system call within the **Linux 5.14** kernel, specifically
+of a custom (dummy) system call within the **Linux 5.15** kernel, specifically
 modifying the
-[mm/mmap.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/mmap.c?h=linux-5.14.y)
+[mm/mmap.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/mmap.c?h=linux-5.15.y)
 file. Through this exercise, you will gain a deeper understanding of the data
 transfer boundary between user space and kernel space, and how even seemingly
 trivial operations can impact system performance.
 
 ---
+
+## 0. Compiling the Linux Kernel
+
+First Download the Linux kernel source code. The uname -r commands gets the current Linux version.
+```
+sudo apt source linux-image-unsigned-$(uname -r)
+
+```
+Then, use our scripts to compile. The first script compilation is a slower compilation process that can take 30-40 minutes. 
+This is a slower compilation step. But fortunately, for each node, you would have to do only once.
+```
+```
+
+
 
 ## 1. Adding a Simple System Call
 You will begin by creating a system call, tentatively called **`app_helper`**,
@@ -29,10 +43,8 @@ a kernel buffer. Inside the kernel, you will modify that data (for example,
 setting all bytes to **`1`**) before copying the updated contents back to user
 space.
 
-First Download the Linux kernel source code. For example, to download Linux 5.14:
+First Download the Linux kernel source code. For example, to download Linux 5.15:
 ```
-wget https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.14.tar.xz
-tar -xf linux-5.14.tar.xz
 ```
 
 To confirm that your system call is being invoked, you should insert a
