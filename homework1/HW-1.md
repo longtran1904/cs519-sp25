@@ -1,7 +1,7 @@
-## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 19th, 11:55pm)  
+## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 19th, 11:55pm) 
 
-**CAUTION:** Copying code from online sources or automatic generation tools like
-ChatGPT, Bard, and others may result in strict penalties.
+**CAUTION:** Copying code from online sources or automatic generation tools is
+not acceptable and will be reported.
 
 System calls serve as one of the most fundamental interfaces between user
 processes and the operating system’s kernel. Whenever a user application needs
@@ -14,7 +14,7 @@ of a custom (dummy) system call within the **Linux 5.15** kernel, specifically
 modifying the
 [mm/mmap.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/mmap.c?h=linux-5.15.y)
 file. Through this exercise, you will gain a deeper understanding of the data
-transfer boundary between user space and kernel space, and how even seemingly
+transfer boundary between user space and kernel space and how even seemingly
 trivial operations can impact system performance.
 
 ---
@@ -24,7 +24,11 @@ trivial operations can impact system performance.
 First, download the Linux kernel source code. The `uname -r` command retrieves the current Linux version:
 
 ```
-sudo apt source linux-image-unsigned-$(uname -r)
+sudo apt-get update
+sudo sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
+
+//Do not use sudo for this step as it just downloads the source files
+apt source linux-image-unsigned-$(uname -r)
 ```
 
 Then, use our scripts to compile the kernel. The first script is a slower
@@ -37,9 +41,17 @@ First, navigate to the Linux source tree:
 cd linux-5.15.0
 ```
 
-Then run the installation script. Note, this is only for the first time installation of the kernel.
+Then run the installation script. 
+
+**Note, this script can be run only for the first time installation of the kernel in a CloudLab node.** 
+This script also installs a bunch of debian related packages required for compilation.
 ```
-../compile_os_slow.sh
+../install_packages.sh
+```
+
+This is the main script to compile. The overall compilation process can take more than 30 to 40 minutes. 
+```
+../compile_os_nopackages.sh
 ```
 
 For all subsequent compilation of kernels, you can just use the fast
@@ -74,7 +86,7 @@ ensure accurate performance measurements—logging can skew timing results
 significantly.
 
 For practical guidance on how to integrate a new system call, refer to the following online resources:
-
+- [Main Reference](https://linux-kernel-labs.github.io/refs/pull/183/merge/lectures/syscalls.html) 
 - [Reference 1](https://shanetully.com/2014/04/adding-a-syscall-to-linux-3-14/)  
 - [Reference 2](https://macboypro.wordpress.com/2009/05/15/adding-a-custom-system-call-to-the-linux-os/)  
 
@@ -104,6 +116,7 @@ system call and time it when testing.
    - **From user to kernel**: Use safe copy functions like `copy_from_user()` to move data from the user buffer into a temporary kernel buffer.  
    - **In the kernel**: Change the data to some known value (`1`).  
    - **From kernel back to user**: Use `copy_to_user()` to write the modified data back to the user buffer.
+   - You can find more details here [copying to and from OS](https://linux-kernel-labs.github.io/refs/pull/183/merge/lectures/syscalls.html?highlight=copy_from_user)
 
 2. **Buffer Allocation and Initialization**  
    - Allocate the user-space buffer with `malloc()`.  
