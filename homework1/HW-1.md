@@ -66,10 +66,6 @@ a kernel buffer. Inside the kernel, you will modify that data (for example,
 setting all bytes to **`1`**) before copying the updated contents back to user
 space.
 
-First Download the Linux kernel source code. For example, to download Linux 5.15:
-```
-```
-
 To confirm that your system call is being invoked, you should insert a
 **`printk()`** statement in the new function’s body. Check the kernel log (e.g.,
 using `dmesg`) to see the message printed. Once you have verified that the
@@ -84,12 +80,6 @@ For practical guidance on how to integrate a new system call, refer to the follo
 
 (You can also find many additional resources online if you need further clarification.)
 
-### Compiling the Linux Kernel
-```
-chmod a+ux compile_kernel.sh
-cd linux-5.14
-./compile_kernel.sh
-```
 
 ---
 
