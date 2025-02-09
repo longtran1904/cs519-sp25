@@ -1,7 +1,7 @@
 ## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 20th, 11:55pm) 
 
-**CAUTION:** Copying code from online sources or automatic generation tools like
-ChatGPT, Bard, and others may result in strict penalties.
+**CAUTION:** Copying code from online sources or automatic generation tools is
+not acceptable and will be reported.
 
 System calls serve as one of the most fundamental interfaces between user
 processes and the operating system’s kernel. Whenever a user application needs
