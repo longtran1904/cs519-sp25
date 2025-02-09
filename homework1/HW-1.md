@@ -1,4 +1,4 @@
-## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 19th, 11:55pm)  
+## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 20th, 11:55pm) 
 
 **CAUTION:** Copying code from online sources or automatic generation tools like
 ChatGPT, Bard, and others may result in strict penalties.
@@ -43,11 +43,15 @@ cd linux-5.15.0
 
 Then run the installation script. 
 
-**Note, this script can be run only for the first time installation of the kernel.** 
-This script also installs a bunch of debian related packages required for compilation. The overall process can 
-take more than 30 to 40 minutes. 
+**Note, this script can be run only for the first time installation of the kernel in a CloudLab node.** 
+This script also installs a bunch of debian related packages required for compilation.
 ```
-../compile_os_slow.sh
+../install_packages.sh
+```
+
+This is the main script to compile. The overall compilation process can take more than 30 to 40 minutes. 
+```
+../compile_os_nopackages.sh
 ```
 
 For all subsequent compilation of kernels, you can just use the fast
