@@ -1,4 +1,4 @@
-## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 20th, 11:55pm) 
+## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 19th, 11:55pm) 
 
 **CAUTION:** Copying code from online sources or automatic generation tools is
 not acceptable and will be reported.
@@ -14,7 +14,7 @@ of a custom (dummy) system call within the **Linux 5.15** kernel, specifically
 modifying the
 [mm/mmap.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/mmap.c?h=linux-5.15.y)
 file. Through this exercise, you will gain a deeper understanding of the data
-transfer boundary between user space and kernel space, and how even seemingly
+transfer boundary between user space and kernel space and how even seemingly
 trivial operations can impact system performance.
 
 ---
