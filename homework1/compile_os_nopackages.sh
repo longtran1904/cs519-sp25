@@ -6,12 +6,16 @@ export CONCURRENCY_LEVEL=$PROC
 export CONCURRENCYLEVEL=$PROC
 
 cp /boot/config-$(uname -r) .config
-make menuconfig
+#make menuconfig
+make oldconfig
+
+scripts/config --disable SYSTEM_TRUSTED_KEYS
+scripts/config --disable SYSTEM_REVOCATION_KEYS
 
 
 touch REPORTING-BUGS
-#sudo make clean -j
-#sudo make prepare
+sudo make clean -j
+sudo make prepare
 sudo make -j$PROC
 sudo make modules -j$PROC
 sudo make modules_install
