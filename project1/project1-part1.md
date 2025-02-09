@@ -1,4 +1,4 @@
-## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 19th, 11:55pm) 
+## Spring 2025 - CS 519 - Project 1 Part-A  (40 points, Due Feb 19th, 11:55pm) 
 
 **CAUTION:** Copying code from online sources or automatic generation tools is
 not acceptable and will be reported.
