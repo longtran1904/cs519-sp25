@@ -15,7 +15,14 @@ fakeroot debian/rules clean
 #fakeroot debian/rules editconfigs # you need to go through each (Y, Exit, Y, Exit..) or get a complaint about config later
 
 fakeroot debian/rules clean
-fakeroot debian/rules binary-headers binary-generic binary-perarch
+
+scripts/config --disable SYSTEM_TRUSTED_KEYS
+scripts/config --disable SYSTEM_REVOCATION_KEYS
+
+
+fakeroot debian/rules binary-headers binary-generic #binary-perarch
+
+
 
 cd ..
 ls *.deb

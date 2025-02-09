@@ -21,16 +21,39 @@ trivial operations can impact system performance.
 
 ## 0. Compiling the Linux Kernel
 
-First Download the Linux kernel source code. The uname -r commands gets the current Linux version.
+First, download the Linux kernel source code. The `uname -r` command retrieves the current Linux version:
+
 ```
 sudo apt source linux-image-unsigned-$(uname -r)
-
-```
-Then, use our scripts to compile. The first script compilation is a slower compilation process that can take 30-40 minutes. 
-This is a slower compilation step. But fortunately, for each node, you would have to do only once.
-```
 ```
 
+Then, use our scripts to compile the kernel. The first script is a slower
+compilation process that can take 30–40 minutes; fortunately, this slower step
+only needs to be performed once per node.
+
+First, navigate to the Linux source tree:
+
+```
+cd linux-5.15.0
+```
+
+Then run the installation script. Note, this is only for the first time installation of the kernel.
+```
+../compile_os_slow.sh
+```
+
+For all subsequent compilation of kernels, you can just use the fast
+compilation script after making the change.
+```
+../compile_os_quick.sh
+```
+
+You will see that the kernel has been installed. Most likely, it would be version 5.15.168. 
+
+Now, time to reboot
+```
+sudo reboot
+```
 
 
 ## 1. Adding a Simple System Call
