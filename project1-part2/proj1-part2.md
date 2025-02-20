@@ -62,15 +62,11 @@ You must clearly show a graph that shows the core count (on the x-axis) and the
 performance on the y-axis (similar to the Linux scalability paper). If your
 solution does not scale beyond a certain core count, you must explain why.
 
-To improve scalability, you can use existing spin lock implementations. The
-repository below provides various spin lock implementations. Some of the spin
-lock implementations offer better performance. Try to understand which spin
-lock implementations provide better performance and why, and then make use of
-them! This is just a reference. You are welcome to consider other spin lock
-implementations.
-```
-https://github.com/cyfdecyf/spinlock/tree/master
-```
+To improve scalability, you can use existing lock implementations. In homework
+1, you had analyzed [different
+locks](https://github.com/RutgersCSSystems/cs519-sp25/tree/main/locks-bench). 
+This is just a reference. You are welcome to consider other lock implementations
+too.
 
 #### Reporting Part 2 Results
 You should report in the following format and should match exactly as shown below. 
