@@ -1,7 +1,6 @@
-## Spring 2025 - CS 519 - Project 1 Part-A  (50 points, Due Feb 19th, 11:55pm)  
 
-**CAUTION:** Copying code from online sources or automatic generation tools like
-ChatGPT, Bard, and others may result in strict penalties.
+**CAUTION:** Copying code from online sources or automatic generation tools is
+not acceptable and will be reported.
 
 System calls serve as one of the most fundamental interfaces between user
 processes and the operating system’s kernel. Whenever a user application needs
@@ -10,14 +9,62 @@ invokes a system call.
 
 In this project, you will explore the mechanics and
 overhead associated with system calls by creating and measuring the performance
-of a custom (dummy) system call within the **Linux 5.14** kernel, specifically
+of a custom (dummy) system call within the **Linux 5.15** kernel, specifically
 modifying the
-[mm/mmap.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/mmap.c?h=linux-5.14.y)
+[mm/mmap.c](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/mm/mmap.c?h=linux-5.15.y)
 file. Through this exercise, you will gain a deeper understanding of the data
-transfer boundary between user space and kernel space, and how even seemingly
+transfer boundary between user space and kernel space and how even seemingly
 trivial operations can impact system performance.
 
 ---
+
+## 0. Compiling the Linux Kernel
+
+First, download the Linux kernel source code. The `uname -r` command retrieves the current Linux version:
+
+```
+sudo apt-get update
+sudo sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
+
+//Do not use sudo for this step as it just downloads the source files
+apt source linux-image-unsigned-$(uname -r)
+```
+
+Then, use our scripts to compile the kernel. The first script is a slower
+compilation process that can take 30–40 minutes; fortunately, this slower step
+only needs to be performed once per node.
+
+First, navigate to the Linux source tree:
+
+```
+cd linux-5.15.0
+```
+
+Then run the installation script. 
+
+**Note, this script can be run only for the first time installation of the kernel in a CloudLab node.** 
+```
+../install_packages.sh
+```
+
+This is the main script to compile. The overall compilation process can take more than 30 to 40 minutes. 
+```
+../compile_os_nopackages.sh
+```
+
+For all subsequent compilation of kernels, you can just use the fast
+compilation script after making the change.
+```
+../compile_os_quick.sh
+```
+
+You will see that the kernel has been installed. Most likely, it would be version 5.15.168. 
+
+Now, time to reboot
+```
+sudo reboot
+```
+
 
 ## 1. Adding a Simple System Call
 You will begin by creating a system call, tentatively called **`app_helper`**,
@@ -29,12 +76,6 @@ a kernel buffer. Inside the kernel, you will modify that data (for example,
 setting all bytes to **`1`**) before copying the updated contents back to user
 space.
 
-First Download the Linux kernel source code. For example, to download Linux 5.14:
-```
-wget https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.14.tar.xz
-tar -xf linux-5.14.tar.xz
-```
-
 To confirm that your system call is being invoked, you should insert a
 **`printk()`** statement in the new function’s body. Check the kernel log (e.g.,
 using `dmesg`) to see the message printed. Once you have verified that the
@@ -43,18 +84,11 @@ ensure accurate performance measurements—logging can skew timing results
 significantly.
 
 For practical guidance on how to integrate a new system call, refer to the following online resources:
-
+- [Main Reference](https://linux-kernel-labs.github.io/refs/pull/183/merge/lectures/syscalls.html) 
 - [Reference 1](https://shanetully.com/2014/04/adding-a-syscall-to-linux-3-14/)  
 - [Reference 2](https://macboypro.wordpress.com/2009/05/15/adding-a-custom-system-call-to-the-linux-os/)  
 
 (You can also find many additional resources online if you need further clarification.)
-
-### Compiling the Linux Kernel
-```
-chmod 0777 compile_kernel.sh
-cd linux-50777
-../compile_kernel.sh
-```
 
 ---
 
@@ -79,6 +113,7 @@ system call and time it when testing.
    - **From user to kernel**: Use safe copy functions like `copy_from_user()` to move data from the user buffer into a temporary kernel buffer.  
    - **In the kernel**: Change the data to some known value (`1`).  
    - **From kernel back to user**: Use `copy_to_user()` to write the modified data back to the user buffer.
+   - You can find more details here [copying to and from OS](https://linux-kernel-labs.github.io/refs/pull/183/merge/lectures/syscalls.html?highlight=copy_from_user)
 
 2. **Buffer Allocation and Initialization**  
    - Allocate the user-space buffer with `malloc()`.  
