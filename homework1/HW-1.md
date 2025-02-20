@@ -51,9 +51,9 @@ For practical guidance on how to integrate a new system call, refer to the follo
 
 ### Compiling the Linux Kernel
 ```
-chmod a+ux compile_kernel.sh
-cd linux-5.14
-./compile_kernel.sh
+chmod 0777 compile_kernel.sh
+cd linux-50777
+../compile_kernel.sh
 ```
 
 ---
