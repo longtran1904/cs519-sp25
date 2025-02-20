@@ -1,4 +1,4 @@
-## Fall 2024 - CS 519 - Project 1 - Part 2 (50 points, Due March 3rd, 11:55pm)  
+## Spring 2025 - CS 519 - Project 1 - Part 2 (50 points, Due March 3rd, 11:55pm)  
 
 This homework will consist of using shared-memory for IPC. 
 
@@ -76,10 +76,7 @@ Input size: A columns, B rows
 Total cores: N cores
 Total runtime: X seconds
 ```
-<br/><br/>
-<br/><br/>
-
-### Submission Instructions
+#### Submission Instructions
 - All executables must be compiled using a single Makefile. If you do not know how to write a 
 Makefile, refer [here](http://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/)
 
