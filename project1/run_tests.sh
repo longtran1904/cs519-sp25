@@ -12,15 +12,17 @@
 
 # Default buffer sizes to test if none are provided
 if [ "$#" -eq 0 ]; then
-    buffer_sizes=(256 512 1024 2048)
+    # buffer_sizes=(256 512 1024 2048)
+    buffer_size=(12288)
 else
     buffer_sizes=("$@")
 fi
 
+rm test
 # Compile the test_app_helper program if the binary doesn't exist.
-if [ ! -f test_app_helper ]; then
+if [ ! -f test ]; then
     echo "Compiling test_app_helper.c..."
-    gcc -o test_app_helper test_app_helper.c
+    gcc -o test test.c
     if [ $? -ne 0 ]; then
         echo "Compilation failed. Exiting."
         exit 1
