@@ -113,21 +113,16 @@ EXPORT_SYMBOL(high_memory);
 * Keep track of contiguous physical frames
 * Implemented using red-black tree
 */
-int rb_extent_enabled = 0;
+static pid_t rb_extent_pid = -1;
 
 #include <linux/syscalls.h>
 #include <linux/errno.h>
 #include <linux/printk.h>
-SYSCALL_DEFINE1(enable_rb_extent, int, enabled) {
+SYSCALL_DEFINE0(enable_rb_extent) {
     // your syscall implementation
-    int rb_extent_enabled;
-    if (enabled < 0 || enabled > 1) {
-        return -EINVAL;
-    }   
-
-    rb_extent_enabled = enabled;
+    rb_extent_pid = current->pid;
     
-    printk(KERN_INFO "RB extent enabled: %s\n", rb_extent_enabled == 1 ? "true" : "false");
+    printk(KERN_INFO "RB extent PID: %d\n", rb_extent_pid);
     return 0;
 }
 
@@ -3811,10 +3806,9 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	vm_fault_t ret = 0;
 	pte_t entry;
 
-    if (rb_extent_enabled){
-        /* Check if feature is activated */
-        printk(KERN_INFO "[Page Fault - do_anonymous_page] rb_extent_enabled is activated\n");
-    }
+    if (!rb_extent_pid != -1 && current->pid == rb_extent_pid){
+		printk(KERN_ERR "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
+	}
 
 	/* File mapping without ->vm_ops ? */
 	if (vma->vm_flags & VM_SHARED)

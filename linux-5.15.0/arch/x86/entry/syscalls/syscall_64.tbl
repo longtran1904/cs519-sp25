@@ -370,7 +370,7 @@
 446	common	landlock_restrict_self	sys_landlock_restrict_self
 447	common	memfd_secret		sys_memfd_secret
 448	common	process_mrelease	sys_process_mrelease
-449 common  enable_rb_extent    sys_enbale_rb_extent
+449 common  enable_rb_extent    sys_enable_rb_extent
 
 #
 # Due to a historical design error, certain syscalls are numbered differently
