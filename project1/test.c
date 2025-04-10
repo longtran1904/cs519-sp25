@@ -12,7 +12,7 @@
 #endif
 
 // Default values
-#define DEFAULT_BUF_SIZE       256
+#define DEFAULT_BUF_SIZE       40960
 #define NUM_ITERATIONS 100000
 
 // A helper function to get current time in microseconds
@@ -26,7 +26,7 @@ static long get_time_us(void) {
 }
 
 int main(int argc, char **argv) {
-    char *buffer;
+    int *buffer;
     int i;
     long start_time, end_time;
     long total_time = 0;
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     printf("Using buffer size: %zu bytes\n", buf_size);
 
     // Allocate user-level buffer
-    buffer = (char *)malloc(buf_size);
+    buffer = (int *)malloc(buf_size);
     if (!buffer) {
         perror("malloc");
         return EXIT_FAILURE;
@@ -53,15 +53,22 @@ int main(int argc, char **argv) {
     // memset(buffer, 4, buf_size);
 
     // Test single call before loop to ensure correctness
-    if (syscall(SYS_app_helper, 1) < 0) {
+    if (syscall(SYS_app_helper) < 0) {
         perror("syscall rb_extent (test)");
         return EXIT_FAILURE;
     }
-
+    int page = 4096;
     printf("Single syscall test completed successfully.\n");
-    buffer[0] = 1;
-    buffer[4096] = 1;
-    buffer[8192] = 1;
+    buffer[0*page] = 1;
+    buffer[5*page] = 1;
+    buffer[8*page] = 1;
+
+    for (int i = 0; i < 10; i++){
+        buffer[0*page] *= 2;
+        buffer[5*page] *= 2;
+        buffer[8*page] *= 2;
+    }
+    printf("Buffer values after multiplication: %d, %d, %d\n", buffer[0*page], buffer[5*page], buffer[8*page]);
     free(buffer);
     // // Validate that buffer is set to 1
     // for (i = 0; i < buf_size; i++) {
