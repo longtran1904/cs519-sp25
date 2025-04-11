@@ -15,8 +15,8 @@ scripts/config --disable SYSTEM_REVOCATION_KEYS
 touch REPORTING-BUGS
 #sudo make clean -j
 #sudo make prepare
-sudo make -j$PROC
-#sudo make modules -j$PROC
+# sudo make -j$PROC
+sudo make modules -j$PROC
 sudo make modules_install
 sudo make install
 

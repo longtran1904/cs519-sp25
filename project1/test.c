@@ -42,13 +42,6 @@ int main(int argc, char **argv) {
     }
     printf("Using buffer size: %zu bytes\n", buf_size);
 
-    // Allocate user-level buffer
-    buffer = (int *)malloc(buf_size);
-    if (!buffer) {
-        perror("malloc");
-        return EXIT_FAILURE;
-    }
-
     // Pre-run: Initialize buffer with 4
     // memset(buffer, 4, buf_size);
 
@@ -57,18 +50,26 @@ int main(int argc, char **argv) {
         perror("syscall rb_extent (test)");
         return EXIT_FAILURE;
     }
+
+    // Allocate user-level buffer
+    buffer = (int *)malloc(buf_size);
+    if (!buffer) {
+        perror("malloc");
+        return EXIT_FAILURE;
+    }
+
     int page = 4096;
     printf("Single syscall test completed successfully.\n");
     buffer[0*page] = 1;
-    buffer[5*page] = 1;
+    buffer[6*page] = 1;
     buffer[8*page] = 1;
 
     for (int i = 0; i < 10; i++){
         buffer[0*page] *= 2;
-        buffer[5*page] *= 2;
+        buffer[6*page] *= 2;
         buffer[8*page] *= 2;
     }
-    printf("Buffer values after multiplication: %d, %d, %d\n", buffer[0*page], buffer[5*page], buffer[8*page]);
+    printf("Buffer values after multiplication: %d, %d, %d\n", buffer[0*page], buffer[6*page], buffer[8*page]);
     free(buffer);
     // // Validate that buffer is set to 1
     // for (i = 0; i < buf_size; i++) {

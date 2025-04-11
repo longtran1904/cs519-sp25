@@ -114,16 +114,18 @@ EXPORT_SYMBOL(high_memory);
 * Implemented using red-black tree
 */
 static pid_t rb_extent_pid = -1;
+struct rb_root extent_root = RB_ROOT;
 
 #include <linux/syscalls.h>
 #include <linux/errno.h>
 #include <linux/printk.h>
+#include "extent.h"
 SYSCALL_DEFINE0(enable_rb_extent) {
-    // your syscall implementation
-    rb_extent_pid = current->pid;
-    
-    printk(KERN_INFO "RB extent PID: %d\n", rb_extent_pid);
-    return 0;
+        // your syscall implementation
+        rb_extent_pid = current->pid;
+
+        printk(KERN_INFO "RB extent PID: %d\n", rb_extent_pid);
+        return 0;
 }
 
 /*
@@ -3806,10 +3808,6 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	vm_fault_t ret = 0;
 	pte_t entry;
 
-    if (!rb_extent_pid != -1 && current->pid == rb_extent_pid){
-		printk(KERN_ERR "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
-	}
-
 	/* File mapping without ->vm_ops ? */
 	if (vma->vm_flags & VM_SHARED)
 		return VM_FAULT_SIGBUS;
@@ -3864,6 +3862,15 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 		goto oom_free_page;
 	cgroup_throttle_swaprate(page, GFP_KERNEL);
 
+        // Build custom software-based page table here, use page.
+        if (rb_extent_pid != -1 && current->pid == rb_extent_pid){
+		printk(KERN_ERR "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
+                if (insert_phys_page(&extent_root, page)){
+                        printk(KERN_ERR "[do_anonymous_page] insert_phys_page failed\n");
+                        goto oom_free_page;
+                }
+	}
+        
 	/*
 	 * The memory barrier inside __SetPageUptodate makes sure that
 	 * preceding stores to the page contents become visible before

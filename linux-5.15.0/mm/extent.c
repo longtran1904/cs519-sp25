@@ -1,0 +1,160 @@
+#include "linux/export.h"
+#include<linux/slab.h> // For kmalloc and kfree
+#include<linux/kernel.h>
+#include<linux/errno.h>
+#include<linux/pfn.h>
+#include<linux/mm.h>
+#include"extent.h"
+
+// Global atomic counter for unique extent IDs
+static atomic_t extent_id_counter = ATOMIC_INIT(0);
+
+// Create extent of 1 page
+// TODO: allow extent of multiple continuous pages
+static struct extent *create_extent(struct page *page)
+{
+        struct extent *ext;
+
+        ext = kmalloc(sizeof(*ext), GFP_KERNEL);
+        if (!ext) return NULL;
+
+        ext->start_pfn = page_to_pfn(page);
+        ext->end_pfn = page_to_pfn(page);
+        ext->first_page = page;
+        ext->npages = 1;
+        ext->id = atomic_inc_return(&extent_id_counter);
+        INIT_LIST_HEAD(&ext->page_list);
+        /* No explicit init is needed for rb_node because rb_insert functions will do that */
+
+        return ext;
+}
+
+static struct extent_page *create_extent_page(struct page *page)
+{
+        struct extent_page *ext_page;
+
+        ext_page = kmalloc(sizeof(struct extent_page), GFP_KERNEL);
+        if (!ext_page) return NULL;
+
+        ext_page->page = page;
+        INIT_LIST_HEAD(&ext_page->list);
+
+        return ext_page;
+}
+
+static int insert_extent_rb(struct rb_root *root, struct extent *new_extent)
+{
+        struct rb_node **link = &root->rb_node;
+        struct rb_node *parent = NULL;
+        struct extent *entry;
+
+        while (*link) {
+                parent = *link;
+                entry = rb_entry(parent, struct extent, rb_node);
+
+                if (new_extent->start_pfn < entry->start_pfn)
+                        link = &(*link)->rb_left;
+                else if (new_extent->start_pfn > entry->start_pfn)
+                        link = &(*link)->rb_right;
+                else {
+                        // Duplicate extent
+                        printk(KERN_ERR "Extent with start_pfn %lu already exists\n", new_extent->start_pfn);
+                        return -EEXIST; 
+                }
+                        
+        }
+
+        rb_link_node(&new_extent->rb_node, parent, link);
+        rb_insert_color(&new_extent->rb_node, root);
+
+        return 0;
+}
+
+static void check_merge_extents(struct extent *extent, struct rb_root *root) {
+        struct rb_node *left_node = rb_prev(&extent->rb_node);
+        struct rb_node *right_node = rb_next(&extent->rb_node);
+        struct extent *left_extent = NULL, *right_extent = NULL;
+
+        if (left_node)
+                left_extent = rb_entry(left_node, struct extent, rb_node);
+        if (right_node)
+                right_extent = rb_entry(right_node, struct extent, rb_node);
+
+        // Check and merge with left extent
+        if (left_extent && extent->start_pfn == (left_extent->end_pfn + 1)) {
+                extent->start_pfn = left_extent->start_pfn;
+                extent->start_phys = left_extent->start_phys;
+                extent->npages += left_extent->npages;
+
+                rb_erase(&left_extent->rb_node, root);
+                kfree(left_extent);
+                extent = left_extent;
+        } else {
+                // Check and merge with right extent
+                if (right_extent && extent->end_pfn == (right_extent->start_pfn - 1)) {
+                        extent->end_pfn = right_extent->end_pfn;
+                        extent->end_phys = right_extent->end_phys;
+                        extent->npages += right_extent->npages;
+
+                        rb_erase(&right_extent->rb_node, root);
+                        kfree(right_extent);
+                }
+        }
+}
+
+int insert_phys_page(struct rb_root *root, struct page *page)
+{
+        // 1) Traverse through the red-black tree to find the appropriate range of phys addresses
+        struct rb_node *node = root->rb_node;
+        struct extent *current_extent = NULL;
+        unsigned long pfn = page_to_pfn(page);
+        struct extent_page *page_node;
+        struct extent *new_extent;
+
+        // 2) If the phys_address is in the range managed by an extent, insert the page into the list of pages in that extent
+        //    - after inserting, check if the updated extend can be merge with the left or right extent
+        //    - if so, merge the extents and remove the merged extent from the tree
+        //    - if not, just return
+        while (node) {
+                current_extent = rb_entry(node, struct extent, rb_node);
+                if (!current_extent) {
+                        printk(KERN_ERR "Extent entry is NULL\n");
+                        return -EINVAL;
+                }
+
+                if (current_extent->start_pfn > pfn + 1) {
+                        node = node->rb_left;
+                } else if (current_extent->end_pfn < pfn - 1) {
+                        node = node->rb_right;
+                } else {
+                        // Found the extent that contains the phys_addr
+                        if (pfn + 1 == current_extent->start_pfn){
+                                // The new page is contiguous with the left extent
+                                current_extent->start_pfn = pfn;
+                                current_extent->npages++;
+                                page_node = create_extent_page(page);
+                                list_add_tail(&page_node->list, &current_extent->page_list);
+                        } else if (pfn - 1 == current_extent->end_pfn) {
+                                // The new page is contiguous with the right extent
+                                current_extent->end_pfn = pfn;
+                                current_extent->npages++;
+                                page_node = create_extent_page(page);
+                                list_add_tail(&page_node->list, &current_extent->page_list);
+                        }
+                        // check for merge to left/right rb_nodes
+                        check_merge_extents(current_extent, root);
+                        return 0;
+                }
+        }
+        // 3) If the phys_address is not in any range, create a new extent and insert it into the tree
+        // Create new extent
+        new_extent = create_extent(page);
+        if (!new_extent) {
+                printk(KERN_ERR "Failed to create new extent\n");
+                return -ENODATA;
+        }
+        // Add new_extent to the rb_nodes
+        insert_extent_rb(root, new_extent);
+
+        return 0;
+}
