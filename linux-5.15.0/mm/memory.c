@@ -3862,13 +3862,14 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 		goto oom_free_page;
 	cgroup_throttle_swaprate(page, GFP_KERNEL);
 
-        // Build custom software-based page table here, use page.
-        if (rb_extent_pid != -1 && current->pid == rb_extent_pid){
-		printk(KERN_ERR "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
-                if (insert_phys_page(&extent_root, page)){
-                        printk(KERN_ERR "[do_anonymous_page] insert_phys_page failed\n");
-                        goto oom_free_page;
-                }
+    // Build custom software-based page table here, use page.
+    if (rb_extent_pid != -1 && current->pid == rb_extent_pid){
+        printk(KERN_INFO "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
+        printk(KERN_INFO "[do_anonymous_page] extent_root not NULL: %s, page: %p\n", (extent_root.rb_node) ? "true" : "false", page);
+        if (insert_phys_page(&extent_root, page)){
+                printk(KERN_ERR "[do_anonymous_page] insert_phys_page failed\n");
+                goto oom_free_page;
+        }
 	}
         
 	/*
