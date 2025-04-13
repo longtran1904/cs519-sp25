@@ -113,6 +113,9 @@ EXPORT_SYMBOL(high_memory);
 * Keep track of contiguous physical frames
 * Implemented using red-black tree
 */
+
+#ifndef implement_extent
+
 static pid_t rb_extent_pid = -1;
 struct rb_root extent_root = RB_ROOT;
 
@@ -120,6 +123,7 @@ struct rb_root extent_root = RB_ROOT;
 #include <linux/errno.h>
 #include <linux/printk.h>
 #include "extent.h"
+#define PRINT_BUF_SIZE 1024
 SYSCALL_DEFINE0(enable_rb_extent) {
         // your syscall implementation
         rb_extent_pid = current->pid;
@@ -127,6 +131,49 @@ SYSCALL_DEFINE0(enable_rb_extent) {
         printk(KERN_INFO "RB extent PID: %d\n", rb_extent_pid);
         return 0;
 }
+SYSCALL_DEFINE0(disable_rb_extent) {
+        struct rb_node *node;
+        struct extent *data;
+        struct extent_page *page_node;
+        struct list_head *pos;
+        struct list_head *pos_next;
+        int count_extent_page;
+        int count_extent = 0;
+        rb_extent_pid = -1;
+
+        printk(KERN_INFO "Cleanning up RB extents...");
+
+        while ((node = rb_first(&extent_root)) != NULL) {
+                data = rb_entry(node, struct extent, rb_node);
+                if (!data) {
+                        printk(KERN_ERR "Extent entry is NULL\n");
+                        return -EINVAL;
+                }
+
+                count_extent_page = 0;
+                printk(KERN_INFO "Extent %d:\n", data->id);
+                list_for_each_safe(pos, pos_next, &(data->page_list)) {
+                        count_extent_page++;
+
+                        page_node = list_entry(pos, struct extent_page, list);
+                        printk(KERN_INFO "[Extent Page %d] - PFN %lu\n", count_extent_page, page_to_pfn(page_node->page));
+                        list_del(pos);
+                        kfree(page_node);
+                }
+                printk(KERN_INFO "[end of list]\n");
+
+                // Remove the rb_node from the tree so the tree structure remains valid.
+                rb_erase(node, &extent_root);
+                kfree(data);
+                // Increment the count of extents cleaned
+                count_extent++;
+        }
+        printk(KERN_INFO "Modification 1.3\n");
+        printk(KERN_INFO "[RB extents cleaned] - [RB extent PID disabled]\n");
+
+        return count_extent;
+}
+#endif
 
 /*
  * Randomize the address space (stacks, mmaps, brk, etc.).

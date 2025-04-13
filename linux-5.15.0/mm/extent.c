@@ -11,26 +11,6 @@
 // Global atomic counter for unique extent IDs
 static atomic_t extent_id_counter = ATOMIC_INIT(0);
 
-// Create extent of 1 page
-// TODO: allow extent of multiple continuous pages
-static struct extent *create_extent(struct page *page)
-{
-        struct extent *ext;
-
-        ext = kmalloc(sizeof(*ext), GFP_KERNEL);
-        if (!ext) return NULL;
-
-        ext->start_pfn = page_to_pfn(page);
-        ext->end_pfn = page_to_pfn(page);
-        ext->first_page = page;
-        ext->npages = 1;
-        ext->id = atomic_inc_return(&extent_id_counter);
-        INIT_LIST_HEAD(&ext->page_list);
-        /* No explicit init is needed for rb_node because rb_insert functions will do that */
-
-        return ext;
-}
-
 static struct extent_page *create_extent_page(struct page *page)
 {
         struct extent_page *ext_page;
@@ -42,6 +22,29 @@ static struct extent_page *create_extent_page(struct page *page)
         INIT_LIST_HEAD(&ext_page->list);
 
         return ext_page;
+}
+
+// Create extent of 1 page
+// TODO: allow extent of multiple continuous pages
+static struct extent *create_extent(struct page *page)
+{
+        struct extent *ext;
+        struct extent_page *page_node;
+
+        ext = kmalloc(sizeof(*ext), GFP_KERNEL);
+        if (!ext) return NULL;
+
+        ext->start_pfn = page_to_pfn(page);
+        ext->end_pfn = page_to_pfn(page);
+        ext->first_page = page;
+        ext->npages = 1;
+        ext->id = atomic_inc_return(&extent_id_counter);
+        INIT_LIST_HEAD(&ext->page_list);
+
+        page_node = create_extent_page(page);
+        list_add_tail(&(page_node->list), &(ext->page_list));
+
+        return ext;
 }
 
 static int insert_extent_rb(struct rb_root *root, struct extent *new_extent)
@@ -77,35 +80,58 @@ static int insert_extent_rb(struct rb_root *root, struct extent *new_extent)
 }
 
 static void check_merge_extents(struct extent *extent, struct rb_root *root) {
-        struct rb_node *left_node = rb_prev(&extent->rb_node);
-        struct rb_node *right_node = rb_next(&extent->rb_node);
+        struct rb_node *left_node;
+        struct rb_node *right_node;
         struct extent *left_extent = NULL, *right_extent = NULL;
+        struct extent_page *page_node;
+        struct list_head *pos, *pos_next;
+        while (!extent){
+                left_node = rb_prev(&extent->rb_node);
+                right_node = rb_next(&extent->rb_node);
 
-        if (left_node)
-                left_extent = rb_entry(left_node, struct extent, rb_node);
-        if (right_node)
-                right_extent = rb_entry(right_node, struct extent, rb_node);
+                if (left_node)
+                        left_extent = rb_entry(left_node, struct extent, rb_node);
+                if (right_node)
+                        right_extent = rb_entry(right_node, struct extent, rb_node);
 
-        // Check and merge with left extent
-        if (left_extent && extent->start_pfn == (left_extent->end_pfn + 1)) {
-                extent->start_pfn = left_extent->start_pfn;
-                extent->start_phys = left_extent->start_phys;
-                extent->npages += left_extent->npages;
+                // Check and merge with left extent
+                if (left_extent && extent->start_pfn == (left_extent->end_pfn + 1)) {
+                        extent->start_pfn = left_extent->start_pfn;
+                        extent->start_phys = left_extent->start_phys;
+                        extent->npages += left_extent->npages;
 
-                rb_erase(&left_extent->rb_node, root);
-                kfree(left_extent);
-                extent = left_extent;
-        } else {
-                // Check and merge with right extent
-                if (right_extent && extent->end_pfn == (right_extent->start_pfn - 1)) {
-                        extent->end_pfn = right_extent->end_pfn;
-                        extent->end_phys = right_extent->end_phys;
-                        extent->npages += right_extent->npages;
+                        // Merge the page list
+                        list_splice(&left_extent->page_list, &extent->page_list);
+                        // Remove the left extent from the tree
+                        list_for_each_safe(pos, pos_next, &right_extent->page_list) {
+                                page_node = list_entry(pos, struct extent_page, list);
+                                list_del(&page_node->list);
+                                kfree(page_node);
+                        }
 
-                        rb_erase(&right_extent->rb_node, root);
-                        kfree(right_extent);
+                        rb_erase(&left_extent->rb_node, root);
+                        kfree(left_extent);
+                } else {
+                        // Check and merge with right extent
+                        if (right_extent && extent->end_pfn == (right_extent->start_pfn - 1)) {
+                                extent->end_pfn = right_extent->end_pfn;
+                                extent->end_phys = right_extent->end_phys;
+                                extent->npages += right_extent->npages;
+
+                                list_splice_tail(&right_extent->page_list, &extent->page_list);
+                                // Remove the right extent from the tree
+                                list_for_each_safe(pos, pos_next, &right_extent->page_list) {
+                                        page_node = list_entry(pos, struct extent_page, list);
+                                        list_del(&page_node->list);
+                                        kfree(page_node);
+                                }
+
+                                rb_erase(&right_extent->rb_node, root);
+                                kfree(right_extent);
+                        }
                 }
         }
+        
 }
 
 int insert_phys_page(struct rb_root *root, struct page *page)
@@ -116,6 +142,8 @@ int insert_phys_page(struct rb_root *root, struct page *page)
         unsigned long pfn;
         struct extent_page *page_node;
         struct extent *new_extent;
+        // To delete when finished debugging
+        struct extent_page *tmp_extent_page;
 
         printk(KERN_INFO "Inserting page with PFN: %lu\n", page_to_pfn(page));
         node = root->rb_node;
@@ -143,14 +171,18 @@ int insert_phys_page(struct rb_root *root, struct page *page)
                                 // The new page is contiguous with the left extent
                                 current_extent->start_pfn = pfn;
                                 current_extent->npages++;
+                                tmp_extent_page = list_first_entry(&(current_extent->page_list), struct extent_page, list);
+                                printk(KERN_INFO "start of linked list %lu\n", page_to_pfn(tmp_extent_page->page));
                                 page_node = create_extent_page(page);
-                                list_add_tail(&page_node->list, &current_extent->page_list);
+                                list_add(&(page_node->list), &(current_extent->page_list));
+                                tmp_extent_page = list_first_entry(&(current_extent->page_list), struct extent_page, list);
+                                printk(KERN_INFO "added page to left | start of linked list %lu\n", page_to_pfn(tmp_extent_page->page));
                         } else if (pfn - 1 == current_extent->end_pfn) {
                                 // The new page is contiguous with the right extent
                                 current_extent->end_pfn = pfn;
                                 current_extent->npages++;
                                 page_node = create_extent_page(page);
-                                list_add_tail(&page_node->list, &current_extent->page_list);
+                                list_add_tail(&(page_node->list), &(current_extent->page_list));
                         }
                         // check for merge to left/right rb_nodes
                         check_merge_extents(current_extent, root);

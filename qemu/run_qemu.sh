@@ -26,10 +26,14 @@ sleep 1
 sudo mount -o loop $QEMU_IMG_FILE $QEMU_DIR
 
 cd $BASE/project1
-gcc -o test test.c
+rm -f test
+# Compile test user-space program
+gcc -o test -g test.c
 sudo cp test $QEMU_DIR/test
 
 sudo umount $QEMU_DIR
+
+sleep 3
 
 ### Run QEMU
 cd $BASE

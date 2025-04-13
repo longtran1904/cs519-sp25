@@ -8,7 +8,8 @@
 
 // Define the system call number if not present in your headers:
 #ifndef SYS_app_helper
-#define SYS_app_helper 449  // <--- Adjust to match your setup
+#define SYS_turn_on_extent 449  // <--- Adjust to match your setup
+#define SYS_turn_off_extent 450
 #endif
 
 // Default values
@@ -25,8 +26,24 @@ static long get_time_us(void) {
     return (tv.tv_sec * 1000000L) + tv.tv_usec;
 }
 
+void touch_and_print_buffer(char *buffer, int touch_list[], int size) {
+        int page_size = 4096; // Assuming page size is 4096 bytes
+        for (int i = 0; i < size; i++) {
+                buffer[touch_list[i]*page_size] = 1;
+        }
+
+        for (int i = 0; i < 5; i++){
+                for (int j = 0; j < size; j++)
+                        buffer[touch_list[j]*page_size] *= 2;
+                }   
+
+        for (int i = 0; i < size; i++) {
+                printf("Buffer[%d] = %d\n", touch_list[i]*page_size, buffer[touch_list[i]*page_size]);
+        }
+}
+
 int main(int argc, char **argv) {
-    int *buffer;
+    char *buffer;
     int i;
     long start_time, end_time;
     long total_time = 0;
@@ -45,32 +62,37 @@ int main(int argc, char **argv) {
     // Pre-run: Initialize buffer with 4
     // memset(buffer, 4, buf_size);
 
-    // Allocate user-level buffer
-    buffer = (int *)malloc(buf_size);
-    if (!buffer) {
-        perror("malloc");
-        return EXIT_FAILURE;
-    }
-
     // Test single call before loop to ensure correctness
-    if (syscall(SYS_app_helper) < 0) {
+    if (syscall(SYS_turn_on_extent) < 0) {
         perror("syscall rb_extent (test)");
         return EXIT_FAILURE;
     }
     printf("Single syscall test completed successfully.\n");
 
-    int page = 4096;
-    buffer[3*page] = 1;
-    buffer[6*page] = 1;
-    buffer[8*page] = 1;
-
-    for (int i = 0; i < 10; i++){
-        buffer[3*page] *= 2;
-        buffer[6*page] *= 2;
-        buffer[8*page] *= 2;
+    // Allocate user-level buffer
+    buffer = (char *)malloc(buf_size);
+    if (!buffer) {
+        perror("malloc");
+        return EXIT_FAILURE;
     }
-    printf("Buffer values after multiplication: %d, %d, %d\n", buffer[3*page], buffer[6*page], buffer[8*page]);
+
+
+    int size = 10;
+    int touch_list[size];
+    for (int i = 0; i < size; i++) {
+        touch_list[i] = i;
+    }
+    touch_and_print_buffer(buffer, touch_list, size);
+
     free(buffer);
+
+    // Test single call before loop to ensure correctness
+    int number_of_extents = 0;
+    if ((number_of_extents = syscall(SYS_turn_off_extent)) < 0) {
+        perror("syscall turn_off_extent");
+        return EXIT_FAILURE;
+    }
+    printf("[Total extents]: %d\n", number_of_extents);
     // // Validate that buffer is set to 1
     // for (i = 0; i < buf_size; i++) {
     //     if (buffer[i] != 1) {
