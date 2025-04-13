@@ -13,8 +13,9 @@
 #endif
 
 // Default values
-#define DEFAULT_BUF_SIZE       40960
-#define NUM_ITERATIONS 100000
+#define DEFAULT_BUF_SIZE       409600
+// #define NUM_ITERATIONS 100000
+#define NUM_ITERATIONS 1
 
 // A helper function to get current time in microseconds
 static long get_time_us(void) {
@@ -37,108 +38,70 @@ void touch_and_print_buffer(char *buffer, int touch_list[], int size) {
                         buffer[touch_list[j]*page_size] *= 2;
                 }   
 
-        for (int i = 0; i < size; i++) {
-                printf("Buffer[%d] = %d\n", touch_list[i]*page_size, buffer[touch_list[i]*page_size]);
-        }
+        // for (int i = 0; i < size; i++) {
+        //         printf("Buffer[%d] = %d\n", touch_list[i]*page_size, buffer[touch_list[i]*page_size]);
+        // }
 }
 
 int main(int argc, char **argv) {
-    char *buffer;
-    int i;
-    long start_time, end_time;
-    long total_time = 0;
-    size_t buf_size = DEFAULT_BUF_SIZE;
+        char *buffer;
+        int i;
+        long start_time, end_time;
+        long total_time = 0;
+        size_t buf_size = DEFAULT_BUF_SIZE;
 
-    // If a command-line argument is provided, use it as the buffer size.
-    if (argc > 1) {
-        buf_size = (size_t)atoi(argv[1]);
-        if (buf_size == 0) {
-            fprintf(stderr, "Invalid buffer size provided. Using default %d bytes.\n", DEFAULT_BUF_SIZE);
-            buf_size = DEFAULT_BUF_SIZE;
+        // If a command-line argument is provided, use it as the buffer size.
+        if (argc > 1) {
+                buf_size = (size_t)atoi(argv[1]);
+                if (buf_size == 0) {
+                        fprintf(stderr, "Invalid buffer size provided. Using default %d bytes.\n", DEFAULT_BUF_SIZE);
+                        buf_size = DEFAULT_BUF_SIZE;
+                }
         }
-    }
-    printf("Using buffer size: %zu bytes\n", buf_size);
+        printf("Using buffer size: %zu bytes\n", buf_size);
 
-    // Pre-run: Initialize buffer with 4
-    // memset(buffer, 4, buf_size);
+        start_time = get_time_us();
+        for (i = 0; i < NUM_ITERATIONS; i++) {
+                // Test single call before loop to ensure correctness
+                if (syscall(SYS_turn_on_extent) < 0) {
+                        perror("syscall rb_extent (test)");
+                        return EXIT_FAILURE;
+                }
+                printf("Single syscall test completed successfully.\n");
 
-    // Test single call before loop to ensure correctness
-    if (syscall(SYS_turn_on_extent) < 0) {
-        perror("syscall rb_extent (test)");
-        return EXIT_FAILURE;
-    }
-    printf("Single syscall test completed successfully.\n");
+                // Allocate user-level buffer
+                buffer = (char *)malloc(buf_size);
+                if (!buffer) {
+                        perror("malloc");
+                        return EXIT_FAILURE;
+                }
 
-    // Allocate user-level buffer
-    buffer = (char *)malloc(buf_size);
-    if (!buffer) {
-        perror("malloc");
-        return EXIT_FAILURE;
-    }
+                int size = (int) (buf_size / 4096); // number of pages
+                int touch_list[size];
+                for (int i = 0; i < size; i++) {
+                        touch_list[i] = i;
+                }
+                touch_and_print_buffer(buffer, touch_list, size);
 
+                free(buffer);
 
-    int size = 10;
-    int touch_list[size];
-    for (int i = 0; i < size; i++) {
-        touch_list[i] = i;
-    }
-    touch_and_print_buffer(buffer, touch_list, size);
+                // Test single call before loop to ensure correctness
+                int number_of_extents = 0;
+                if ((number_of_extents = syscall(SYS_turn_off_extent)) < 0) {
+                        perror("syscall turn_off_extent");
+                        return EXIT_FAILURE;
+                }
+                printf("[Total extents]: %d\n", number_of_extents);
+        }
+        end_time = get_time_us();
+        total_time = end_time - start_time;
 
-    free(buffer);
+        // Compute average time in microseconds
+        double avg_time_us = (double)total_time / (double)NUM_ITERATIONS;
 
-    // Test single call before loop to ensure correctness
-    int number_of_extents = 0;
-    if ((number_of_extents = syscall(SYS_turn_off_extent)) < 0) {
-        perror("syscall turn_off_extent");
-        return EXIT_FAILURE;
-    }
-    printf("[Total extents]: %d\n", number_of_extents);
-    // // Validate that buffer is set to 1
-    // for (i = 0; i < buf_size; i++) {
-    //     if (buffer[i] != 1) {
-    //         fprintf(stderr, "Validation failed at index %d (expected 1, got %d)\n",
-    //                 i, buffer[i]);
-    //         free(buffer);
-    //         return EXIT_FAILURE;
-    //     }
-    // }
-    // // Reset buffer to 4 for the timed loop
-    // memset(buffer, 4, buf_size);
+        printf("Ran %d iterations.\n", NUM_ITERATIONS);
+        printf("Total time: %ld microseconds.\n", total_time);
+        printf("Average time per syscall: %.2f microseconds.\n", avg_time_us);
 
-    // // Benchmark loop
-    // start_time = get_time_us();
-    // for (i = 0; i < NUM_ITERATIONS; i++) {
-    //     // Reinitialize buffer with 4 on each iteration
-    //     memset(buffer, 4, buf_size);
-
-    //     // Invoke the system call
-    //     if (syscall(SYS_app_helper, buffer, buf_size) < 0) {
-    //         perror("syscall app_helper (loop)");
-    //         free(buffer);
-    //         return EXIT_FAILURE;
-    //     }
-    // }
-    // end_time = get_time_us();
-    // total_time = end_time - start_time;
-
-    // // Compute average time in microseconds
-    // double avg_time_us = (double)total_time / (double)NUM_ITERATIONS;
-
-    // printf("Ran %d iterations.\n", NUM_ITERATIONS);
-    // printf("Total time: %ld microseconds.\n", total_time);
-    // printf("Average time per syscall: %.2f microseconds.\n", avg_time_us);
-
-    // // Final validation to confirm buffer is set to 1
-    // for (i = 0; i < buf_size; i++) {
-    //     if (buffer[i] != 1) {
-    //         fprintf(stderr, "Final validation failed at index %d (expected 1, got %d)\n",
-    //                 i, buffer[i]);
-    //         free(buffer);
-    //         return EXIT_FAILURE;
-    //     }
-    // }
-    // printf("Final validation succeeded! The buffer is correctly set to 1.\n");
-
-    // free(buffer);
-    return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
 }

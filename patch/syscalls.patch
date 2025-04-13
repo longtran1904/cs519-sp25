@@ -1,0 +1,11 @@
+--- /mnt/cs519-sp25/linux-5.15.0/include/linux/syscalls.h.orig	2025-04-13 16:47:58.142113362 -0600
++++ /mnt/cs519-sp25/linux-5.15.0/include/linux/syscalls.h	2025-04-13 16:34:16.249940137 -0600
+@@ -1171,6 +1171,8 @@
+ asmlinkage long sys_sysfs(int option,
+ 				unsigned long arg1, unsigned long arg2);
+ asmlinkage long sys_fork(void);
++asmlinkage long sys_enable_rb_extent(void);
++asmlinkage long sys_disable_rb_extent(void);
+ 
+ /* obsolete: kernel/time/time.c */
+ asmlinkage long sys_stime(__kernel_old_time_t __user *tptr);
