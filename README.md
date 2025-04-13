@@ -39,12 +39,16 @@ cd linux-5.15.0
 ../qemu/compile_kernel_qemu.sh
 ```
 
+Compile user-space program
+```
+cd project1
+gcc -o test test.c
+```
+This produces executable C program in project1/test
+
 Run QEMU with new kernel image:
+(This script mount file disk, recompile project1/test and copy into file disk, then run QEMU image)
 ```
 cd $BASE
 ./qemu/run_qemu.sh
 ```
-
-
-
-

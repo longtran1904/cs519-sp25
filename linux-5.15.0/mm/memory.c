@@ -116,17 +116,25 @@ EXPORT_SYMBOL(high_memory);
 
 #ifndef implement_extent
 
-static pid_t rb_extent_pid = -1;
-struct rb_root extent_root = RB_ROOT;
+
 
 #include <linux/syscalls.h>
 #include <linux/errno.h>
 #include <linux/printk.h>
 #include "extent.h"
-#define PRINT_BUF_SIZE 1024
+
+static pid_t rb_extent_pid = -1;
+static struct rb_root extent_root = RB_ROOT;
+static struct mutex *extent_root_mutex;
 SYSCALL_DEFINE0(enable_rb_extent) {
-        // your syscall implementation
         rb_extent_pid = current->pid;
+
+        extent_root_mutex = kmalloc(sizeof(struct mutex), GFP_KERNEL);
+        if (!extent_root_mutex) {
+                printk(KERN_ERR "Failed to allocate memory for mutex.\n");
+                return -ENOMEM;
+        }
+        mutex_init(extent_root_mutex); // init mutex
 
         printk(KERN_INFO "RB extent PID: %d\n", rb_extent_pid);
         return 0;
@@ -171,6 +179,7 @@ SYSCALL_DEFINE0(disable_rb_extent) {
         printk(KERN_INFO "Modification 1.3\n");
         printk(KERN_INFO "[RB extents cleaned] - [RB extent PID disabled]\n");
 
+        kfree(extent_root_mutex);
         return count_extent;
 }
 #endif
@@ -3913,7 +3922,10 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
     if (rb_extent_pid != -1 && current->pid == rb_extent_pid){
         printk(KERN_INFO "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
         printk(KERN_INFO "[do_anonymous_page] extent_root not NULL: %s, page: %p\n", (extent_root.rb_node) ? "true" : "false", page);
-        if (insert_phys_page(&extent_root, page)){
+        mutex_lock(extent_root_mutex);
+        int extent_insert = insert_phys_page(&extent_root, page);
+        mutex_unlock(extent_root_mutex);
+        if (extent_insert < 0){
                 printk(KERN_ERR "[do_anonymous_page] insert_phys_page failed\n");
                 goto oom_free_page;
         }

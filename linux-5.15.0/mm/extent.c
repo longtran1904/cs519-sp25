@@ -142,8 +142,6 @@ int insert_phys_page(struct rb_root *root, struct page *page)
         unsigned long pfn;
         struct extent_page *page_node;
         struct extent *new_extent;
-        // To delete when finished debugging
-        struct extent_page *tmp_extent_page;
 
         printk(KERN_INFO "Inserting page with PFN: %lu\n", page_to_pfn(page));
         node = root->rb_node;
@@ -171,12 +169,8 @@ int insert_phys_page(struct rb_root *root, struct page *page)
                                 // The new page is contiguous with the left extent
                                 current_extent->start_pfn = pfn;
                                 current_extent->npages++;
-                                tmp_extent_page = list_first_entry(&(current_extent->page_list), struct extent_page, list);
-                                printk(KERN_INFO "start of linked list %lu\n", page_to_pfn(tmp_extent_page->page));
                                 page_node = create_extent_page(page);
                                 list_add(&(page_node->list), &(current_extent->page_list));
-                                tmp_extent_page = list_first_entry(&(current_extent->page_list), struct extent_page, list);
-                                printk(KERN_INFO "added page to left | start of linked list %lu\n", page_to_pfn(tmp_extent_page->page));
                         } else if (pfn - 1 == current_extent->end_pfn) {
                                 // The new page is contiguous with the right extent
                                 current_extent->end_pfn = pfn;
