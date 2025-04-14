@@ -31,7 +31,34 @@ Set password for the virtualized ubuntu disk image
 Exit the disk image shell
 `exit`
 
+### To apply the patch on a new kernel
+
+Download a new kernel from source
+```
+rm -rf linux-5.15.0 # Remove modified kernel
+sudo apt-get update
+sudo sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
+sudo apt update
+apt source linux-image-unsigned-$(uname -r)
+```
+
+Apply patches to the new kernel
+`./apply_batch`
+
+### Compile kernel for the first time
+```
+cd linux-5.15.0
+../project1/install_packages.sh
+../project1/compile_os_nopackages.sh
+```
+
 ### Load kernel and use QEMU
+
+Remember to setvar before using QEMU scripts:
+```
+cd linux-5.15.0
+../qemu/setvars.sh
+```
 
 Compile kernel and load kernel to qemu directory:
 ```
@@ -39,16 +66,23 @@ cd linux-5.15.0
 ../qemu/compile_kernel_qemu.sh
 ```
 
-Compile user-space program
-```
-cd project1
-gcc -o test test.c
-```
-This produces executable C program in project1/test
-
 Run QEMU with new kernel image:
 (This script mount file disk, recompile project1/test and copy into file disk, then run QEMU image)
 ```
-cd $BASE
-./qemu/run_qemu.sh
+../qemu/run_qemu.sh
 ```
+
+### In QEMU, how to test user-space program:
+login using username: root - password you set before
+```
+cd /
+./test
+```
+
+If you want to see details of extents:
+`dmesg`
+
+To exit:
+`Ctrl+A X`
+
+if you want to change user-space test program, change test.c in `project1/`, then run QEMU again `../qemu/run_qemu.sh`

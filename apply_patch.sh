@@ -1,4 +1,4 @@
-
+#!/bin/bash
 BASE=$PWD
 echo "BASE=$BASE"
 PATCH=$BASE/patch
