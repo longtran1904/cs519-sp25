@@ -1,5 +1,5 @@
---- /mnt/cs519-sp25/linux-5.15.0/arch/x86/entry/syscalls/syscall_64.tbl.orig	2025-04-13 16:47:58.146113442 -0600
-+++ /mnt/cs519-sp25/linux-5.15.0/arch/x86/entry/syscalls/syscall_64.tbl	2025-04-13 16:34:16.253940216 -0600
+--- /mnt/cs519-sp25/linux-5.15.0/arch/x86/entry/syscalls/syscall_64.tbl.orig	2025-04-13 18:09:27.083067834 -0600
++++ /mnt/cs519-sp25/linux-5.15.0/arch/x86/entry/syscalls/syscall_64.tbl	2025-04-13 16:58:17.230261599 -0600
 @@ -370,6 +370,8 @@
  446	common	landlock_restrict_self	sys_landlock_restrict_self
  447	common	memfd_secret		sys_memfd_secret
