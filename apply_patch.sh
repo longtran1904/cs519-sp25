@@ -1,7 +1,7 @@
 
 BASE=$PWD
 echo "BASE=$BASE"
-PATCH=$BASE/cs519-sp25/patch
+PATCH=$BASE/patch
 TARGET=$BASE/linux-5.15.0
 
 patch -p3 < $PATCH/syscalls.patch

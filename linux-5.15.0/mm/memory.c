@@ -146,6 +146,7 @@ SYSCALL_DEFINE0(disable_rb_extent) {
         struct list_head *pos;
         struct list_head *pos_next;
         int count_extent_page;
+        int total_extent_page = 0;
         int count_extent = 0;
         rb_extent_pid = -1;
 
@@ -162,6 +163,7 @@ SYSCALL_DEFINE0(disable_rb_extent) {
                 printk(KERN_INFO "Extent %d:\n", data->id);
                 list_for_each_safe(pos, pos_next, &(data->page_list)) {
                         count_extent_page++;
+                        total_extent_page++;
 
                         page_node = list_entry(pos, struct extent_page, list);
                         printk(KERN_INFO "[Extent Page %d] - PFN %lu\n", count_extent_page, page_to_pfn(page_node->page));
@@ -176,6 +178,7 @@ SYSCALL_DEFINE0(disable_rb_extent) {
                 // Increment the count of extents cleaned
                 count_extent++;
         }
+        printk(KERN_INFO "Total pages: %d\n", total_extent_page);
         printk(KERN_INFO "Modification 1.3\n");
         printk(KERN_INFO "[RB extents cleaned] - [RB extent PID disabled]\n");
 
@@ -3863,6 +3866,7 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	struct page *page;
 	vm_fault_t ret = 0;
 	pte_t entry;
+        int extent_insert;
 
 	/* File mapping without ->vm_ops ? */
 	if (vma->vm_flags & VM_SHARED)
@@ -3923,7 +3927,7 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
                 printk(KERN_INFO "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
                 printk(KERN_INFO "[do_anonymous_page] extent_root not NULL: %s, page: %p\n", (extent_root.rb_node) ? "true" : "false", page);
                 mutex_lock(extent_root_mutex);
-                int extent_insert = insert_phys_page(&extent_root, page);
+                extent_insert = insert_phys_page(&extent_root, page);
                 mutex_unlock(extent_root_mutex);
                 if (extent_insert < 0){
                         printk(KERN_ERR "[do_anonymous_page] insert_phys_page failed\n");
