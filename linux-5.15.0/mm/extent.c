@@ -53,7 +53,7 @@ static int insert_extent_rb(struct rb_root *root, struct extent *new_extent)
         struct rb_node *parent = NULL;
         struct extent *entry;
 
-        printk(KERN_INFO "Traversing through rb tree...");
+        // printk(KERN_INFO "Traversing through rb tree...");
 
         while (*link) {
                 parent = *link;
@@ -71,7 +71,7 @@ static int insert_extent_rb(struct rb_root *root, struct extent *new_extent)
                         
         }
 
-        printk(KERN_INFO "Inserting new extent with start_pfn %lu\n", new_extent->start_pfn);
+        // printk(KERN_INFO "Inserting new extent with start_pfn %lu\n", new_extent->start_pfn);
 
         rb_link_node(&new_extent->rb_node, parent, link);
         rb_insert_color(&new_extent->rb_node, root);
@@ -143,7 +143,7 @@ int insert_phys_page(struct rb_root *root, struct page *page)
         struct extent_page *page_node;
         struct extent *new_extent;
 
-        printk(KERN_INFO "Inserting page with PFN: %lu\n", page_to_pfn(page));
+        // printk(KERN_INFO "Inserting page with PFN: %lu\n", page_to_pfn(page));
         node = root->rb_node;
         current_extent = NULL;
         pfn = page_to_pfn(page);
@@ -184,7 +184,7 @@ int insert_phys_page(struct rb_root *root, struct page *page)
                 }
         }
 
-        printk(KERN_INFO "No existing extent found for PFN: %lu - creating new extent\n", pfn);
+        // printk(KERN_INFO "No existing extent found for PFN: %lu - creating new extent\n", pfn);
 
         // 3) If the phys_address is not in any range, create a new extent and insert it into the tree
         // Create new extent
@@ -193,10 +193,10 @@ int insert_phys_page(struct rb_root *root, struct page *page)
                 printk(KERN_ERR "Failed to create new extent\n");
                 return -ENODATA;
         }
-        printk(KERN_INFO "New extent created with PFN: %lu\n", new_extent->start_pfn);
+        // printk(KERN_INFO "New extent created with PFN: %lu\n", new_extent->start_pfn);
         // Add new_extent to the rb_nodes
         insert_extent_rb(root, new_extent);
-        printk(KERN_INFO "New extent inserted into rb tree with PFN: %lu\n", new_extent->start_pfn);
+        // printk(KERN_INFO "New extent inserted into rb tree with PFN: %lu\n", new_extent->start_pfn);
 
 
         return 0;

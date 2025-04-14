@@ -150,7 +150,7 @@ SYSCALL_DEFINE0(disable_rb_extent) {
         int count_extent = 0;
         rb_extent_pid = -1;
 
-        printk(KERN_INFO "Cleanning up RB extents...");
+        // printk(KERN_INFO "Cleanning up RB extents...");
 
         while ((node = rb_first(&extent_root)) != NULL) {
                 data = rb_entry(node, struct extent, rb_node);
@@ -160,17 +160,17 @@ SYSCALL_DEFINE0(disable_rb_extent) {
                 }
 
                 count_extent_page = 0;
-                printk(KERN_INFO "Extent %d:\n", data->id);
+                // printk(KERN_INFO "Extent %d:\n", data->id);
                 list_for_each_safe(pos, pos_next, &(data->page_list)) {
                         count_extent_page++;
                         total_extent_page++;
 
                         page_node = list_entry(pos, struct extent_page, list);
-                        printk(KERN_INFO "[Extent Page %d] - PFN %lu\n", count_extent_page, page_to_pfn(page_node->page));
+                        // printk(KERN_INFO "[Extent Page %d] - PFN %lu\n", count_extent_page, page_to_pfn(page_node->page));
                         list_del(pos);
                         kfree(page_node);
                 }
-                printk(KERN_INFO "[end of list]\n");
+                // printk(KERN_INFO "[end of list]\n");
 
                 // Remove the rb_node from the tree so the tree structure remains valid.
                 rb_erase(node, &extent_root);
@@ -179,7 +179,7 @@ SYSCALL_DEFINE0(disable_rb_extent) {
                 count_extent++;
         }
         printk(KERN_INFO "Total pages: %d\n", total_extent_page);
-        printk(KERN_INFO "Modification 1.3\n");
+        // printk(KERN_INFO "Modification 1.3\n");
         printk(KERN_INFO "[RB extents cleaned] - [RB extent PID disabled]\n");
 
         kfree(extent_root_mutex);
@@ -3924,8 +3924,8 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 
         // Build custom software-based page table here, use page.
         if (rb_extent_pid != -1 && current->pid == rb_extent_pid){
-                printk(KERN_INFO "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
-                printk(KERN_INFO "[do_anonymous_page] extent_root not NULL: %s, page: %p\n", (extent_root.rb_node) ? "true" : "false", page);
+                // printk(KERN_INFO "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
+                // printk(KERN_INFO "[do_anonymous_page] extent_root not NULL: %s, page: %p\n", (extent_root.rb_node) ? "true" : "false", page);
                 mutex_lock(extent_root_mutex);
                 extent_insert = insert_phys_page(&extent_root, page);
                 mutex_unlock(extent_root_mutex);
