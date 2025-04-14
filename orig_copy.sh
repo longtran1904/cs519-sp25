@@ -1,7 +1,7 @@
 #!/bin/bash
 
-cd ..
 BASE=$PWD
+echo $BASE
 ORIGINAL=$PWD/linux-5.15.0
 TARGET=$PWD/cs519-sp25/linux-5.15.0
 PATCH=$PWD/cs519-sp25/patch
@@ -20,10 +20,10 @@ if [ -f mm/Makefile.orig ]; then
 fi
 
 cd $TARGET
-cp $ORIGINAL/include/linux/syscalls.h.orig include/linux/syscalls.h.orig
-cp $ORIGINAL/arch/x86/entry/syscalls/syscall_64.tbl.orig arch/x86/entry/syscalls/syscall_64.tbl.orig
-cp $ORIGINAL/mm/memory.c.orig mm/memory.c.orig
-cp $ORIGINAL/mm/Makefile.orig mm/Makefile.orig
+cp $ORIGINAL/include/linux/syscalls.h include/linux/syscalls.h.orig
+cp $ORIGINAL/arch/x86/entry/syscalls/syscall_64.tbl arch/x86/entry/syscalls/syscall_64.tbl.orig
+cp $ORIGINAL/mm/memory.c mm/memory.c.orig
+cp $ORIGINAL/mm/Makefile mm/Makefile.orig
 if [ -f include/linux/syscalls.h ]; then
         echo "Transfered file include/linux/syscalls.h successfully."
 fi
