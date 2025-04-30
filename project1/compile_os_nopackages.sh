@@ -22,8 +22,8 @@ sudo make clean -j
 sudo make prepare
 sudo make -j$PROC
 sudo make modules -j$PROC
-# sudo make modules_install
-# sudo make install
+sudo make modules_install
+sudo make install
 
 y="5.15.168"
 
