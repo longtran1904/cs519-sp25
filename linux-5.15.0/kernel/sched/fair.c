@@ -21,6 +21,50 @@
  *  Copyright (C) 2007 Red Hat, Inc., Peter Zijlstra
  */
 #include "sched.h"
+#include <linux/kernel.h>
+
+int sched_process_id = 0;
+
+SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. for arguments
+{
+        printk(KERN_INFO "Hello from my_syscall!\n");
+        if (enable) {
+                sched_process_id = current->tgid;
+                printk(KERN_INFO "Cooperative scheduling enabled\n");
+        } else {
+                sched_process_id = 0;
+                printk(KERN_INFO "Cooperative scheduling disabled\n");
+        }
+
+        printk(KERN_INFO "Cooperative scheduling process ID: %d\n", sched_process_id);
+        return 0;
+}
+
+SYSCALL_DEFINE1(cooperative, int, enable)
+{
+        int pid = sched_process_id;
+
+        if (pid == 0) {
+                printk(KERN_INFO "No cooperative scheduling process found\n");
+                return -1;
+        }
+
+        if (current->tgid != pid) {
+                printk(KERN_INFO "Current process is not the cooperative scheduling process\n");
+                return -1;
+        }
+
+        struct task_struct *task; // get task_struct of current->pid
+        if (enable) {
+                // LOGIC FOR COOPERATIVE SCHEDULING
+        }
+        else{
+                // LOGIC FOR NON-COOPERATIVE SCHEDULING
+        }
+
+        printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
+        return 0;
+}
 
 /*
  * Targeted preemption latency for CPU-bound tasks:

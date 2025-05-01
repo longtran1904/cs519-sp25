@@ -1171,8 +1171,8 @@ asmlinkage long sys_uselib(const char __user *library);
 asmlinkage long sys_sysfs(int option,
 				unsigned long arg1, unsigned long arg2);
 asmlinkage long sys_fork(void);
-asmlinkage long sys_enable_rb_extent(void);
-asmlinkage long sys_disable_rb_extent(void);
+asmlinkage long sys_enable_coop_sched(int enable);
+asmlinkage long sys_cooperative(int enable);
 
 /* obsolete: kernel/time/time.c */
 asmlinkage long sys_stime(__kernel_old_time_t __user *tptr);

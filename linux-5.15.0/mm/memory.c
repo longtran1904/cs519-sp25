@@ -109,85 +109,6 @@ void *high_memory;
 EXPORT_SYMBOL(high_memory);
 
 /*
-* Software-based page table for various page sizes
-* Keep track of contiguous physical frames
-* Implemented using red-black tree
-*/
-
-#ifndef implement_extent
-
-
-
-#include <linux/syscalls.h>
-#include <linux/errno.h>
-#include <linux/printk.h>
-#include "extent.h"
-
-static pid_t rb_extent_pid = -1;
-static struct rb_root extent_root = RB_ROOT;
-static struct mutex *extent_root_mutex;
-SYSCALL_DEFINE0(enable_rb_extent) {
-        rb_extent_pid = current->pid;
-
-        extent_root_mutex = kmalloc(sizeof(struct mutex), GFP_KERNEL);
-        if (!extent_root_mutex) {
-                printk(KERN_ERR "Failed to allocate memory for mutex.\n");
-                return -ENOMEM;
-        }
-        mutex_init(extent_root_mutex); // init mutex
-
-        printk(KERN_INFO "RB extent PID: %d\n", rb_extent_pid);
-        return 0;
-}
-SYSCALL_DEFINE0(disable_rb_extent) {
-        struct rb_node *node;
-        struct extent *data;
-        struct extent_page *page_node;
-        struct list_head *pos;
-        struct list_head *pos_next;
-        int count_extent_page;
-        int total_extent_page = 0;
-        int count_extent = 0;
-        rb_extent_pid = -1;
-
-        // printk(KERN_INFO "Cleanning up RB extents...");
-
-        while ((node = rb_first(&extent_root)) != NULL) {
-                data = rb_entry(node, struct extent, rb_node);
-                if (!data) {
-                        printk(KERN_ERR "Extent entry is NULL\n");
-                        return -EINVAL;
-                }
-
-                count_extent_page = 0;
-                // printk(KERN_INFO "Extent %d:\n", data->id);
-                list_for_each_safe(pos, pos_next, &(data->page_list)) {
-                        count_extent_page++;
-                        total_extent_page++;
-
-                        page_node = list_entry(pos, struct extent_page, list);
-                        // printk(KERN_INFO "[Extent Page %d] - PFN %lu\n", count_extent_page, page_to_pfn(page_node->page));
-                        list_del(pos);
-                        kfree(page_node);
-                }
-                // printk(KERN_INFO "[end of list]\n");
-
-                // Remove the rb_node from the tree so the tree structure remains valid.
-                rb_erase(node, &extent_root);
-                kfree(data);
-                // Increment the count of extents cleaned
-                count_extent++;
-        }
-        printk(KERN_INFO "Total pages: %d\n", total_extent_page);
-        // printk(KERN_INFO "Modification 1.3\n");
-        printk(KERN_INFO "[RB extents cleaned] - [RB extent PID disabled]\n");
-
-        kfree(extent_root_mutex);
-        return count_extent;
-}
-#endif
-
-/*
  * Randomize the address space (stacks, mmaps, brk, etc.).
  *
  * ( When CONFIG_COMPAT_BRK=y we exclude brk from randomization,
@@ -3866,7 +3787,6 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	struct page *page;
 	vm_fault_t ret = 0;
 	pte_t entry;
-        int extent_insert;
 
 	/* File mapping without ->vm_ops ? */
 	if (vma->vm_flags & VM_SHARED)
@@ -3922,19 +3842,6 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 		goto oom_free_page;
 	cgroup_throttle_swaprate(page, GFP_KERNEL);
 
-        // Build custom software-based page table here, use page.
-        if (rb_extent_pid != -1 && current->pid == rb_extent_pid){
-                // printk(KERN_INFO "[do_anonymous_page] caller PID: %d\n", rb_extent_pid);
-                // printk(KERN_INFO "[do_anonymous_page] extent_root not NULL: %s, page: %p\n", (extent_root.rb_node) ? "true" : "false", page);
-                mutex_lock(extent_root_mutex);
-                extent_insert = insert_phys_page(&extent_root, page);
-                mutex_unlock(extent_root_mutex);
-                if (extent_insert < 0){
-                        printk(KERN_ERR "[do_anonymous_page] insert_phys_page failed\n");
-                        goto oom_free_page;
-                }
-	}
-        
 	/*
 	 * The memory barrier inside __SetPageUptodate makes sure that
 	 * preceding stores to the page contents become visible before
