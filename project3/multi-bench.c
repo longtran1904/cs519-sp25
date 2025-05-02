@@ -3,6 +3,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
+#include <sys/syscall.h>
+
+#define SYS_enable_coop_sched 449
 
 volatile sig_atomic_t stop = 0;
 
@@ -27,6 +30,12 @@ int main(int argc, char* argv[]) {
                 return EXIT_FAILURE;
         }
 
+        // Enable cooperative scheduling
+        if (syscall(SYS_enable_coop_sched, 1) < 0) {
+            perror("enable_coop_sched = 1");
+            return EXIT_FAILURE;
+        }
+
         pthread_t* threads = malloc(num_threads * sizeof(pthread_t));
         if (threads == NULL) {
                 perror("Failed to allocate memory for threads");
@@ -45,6 +54,12 @@ int main(int argc, char* argv[]) {
 
         for (int i = 0; i < num_threads; i++) {
                 pthread_join(threads[i], NULL);
+        }
+
+        // disable cooperative scheduling
+        if (syscall(SYS_enable_coop_sched, 1) < 0) {
+            perror("enable_coop_sched = 1");
+            return EXIT_FAILURE;
         }
 
         free(threads);

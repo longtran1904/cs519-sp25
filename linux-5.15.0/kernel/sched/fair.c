@@ -22,6 +22,7 @@
  */
 #include "sched.h"
 #include <linux/kernel.h>
+#include <linux/syscalls.h>
 
 int sched_process_id = 0;
 
