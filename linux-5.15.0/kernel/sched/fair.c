@@ -4701,11 +4701,12 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	se = __pick_first_entity(cfs_rq);
 	delta = curr->vruntime - se->vruntime;
 
-        if (task_of(se)->tgid == sched_process_id && task_of(se)->inactive && !curr->inactive)
+        if (task_of(se)->tgid == sched_process_id && se->inactive && !curr->inactive){
                 printk(KERN_INFO "inactive task not preempting current!!!\n");
                 // Do I need to inflate vruntime at this step too?
                 // otherwise, the inactive task will always be the first_entity
                 return;
+        }
 
 	if (delta < 0)
 		return;
@@ -7718,8 +7719,8 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
                 // put the cooperative thread to the rightmost node of rq
                 if (unlikely(task_of(se)->tgid == sched_process_id) && 
                                                 entity_is_task(se)) {
-                        struct rb_node *last_node = __pick_last_entity(cfs_rq);
-                        if (last_node){
+                        struct sched_entity *last_se = __pick_last_entity(cfs_rq);
+                        if (last_se){
                                 u64 target_vruntime;
                                 target_vruntime = max(se->vruntime, last_se->vruntime);
                                 target_vruntime += 1;
