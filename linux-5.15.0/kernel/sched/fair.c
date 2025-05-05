@@ -4701,6 +4701,12 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	se = __pick_first_entity(cfs_rq);
 	delta = curr->vruntime - se->vruntime;
 
+        if (task_of(se)->tgid == sched_process_id && task_of(se)->inactive && !curr->inactive)
+                printk(KERN_INFO "inactive task not preempting current!!!\n");
+                // Do I need to inflate vruntime at this step too?
+                // otherwise, the inactive task will always be the first_entity
+                return;
+
 	if (delta < 0)
 		return;
 
