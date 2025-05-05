@@ -10,6 +10,8 @@
 volatile sig_atomic_t stop = 0;
 
 void handle_sigint(int sig) {
+        printf("Received SIGINT, stopping threads...\n");
+        (void) sig; 
         stop = 1;
 }
 
@@ -30,6 +32,15 @@ int main(int argc, char* argv[]) {
                 return EXIT_FAILURE;
         }
 
+        // Setup SIGINT handler
+        struct sigaction sa;
+        sa.sa_handler = handle_sigint;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        if (sigaction(SIGINT, &sa, NULL) == -1) {
+                perror("sigaction");
+                exit(EXIT_FAILURE);
+        }
         // Enable cooperative scheduling
         if (syscall(SYS_enable_coop_sched, 1) < 0) {
             perror("enable_coop_sched = 1");
@@ -56,11 +67,15 @@ int main(int argc, char* argv[]) {
                 pthread_join(threads[i], NULL);
         }
 
+        printf("All threads terminated.\n");
+
         // disable cooperative scheduling
-        if (syscall(SYS_enable_coop_sched, 1) < 0) {
-            perror("enable_coop_sched = 1");
+        if (syscall(SYS_enable_coop_sched, 0) < 0) {
+            perror("enable_coop_sched = 0");
             return EXIT_FAILURE;
         }
+        
+        printf("Cooperative scheduling disabled.\n");
 
         free(threads);
         return EXIT_SUCCESS;

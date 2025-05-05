@@ -54,13 +54,14 @@ SYSCALL_DEFINE1(cooperative, int, enable)
                 printk(KERN_INFO "Current process is not the cooperative scheduling process\n");
                 return -1;
         }
-
-        struct task_struct *task; // get task_struct of current->pid
+        struct sched_entity *se = &current->se;
         if (enable) {
                 // LOGIC FOR COOPERATIVE SCHEDULING
+                se->inactive = 1;
         }
         else{
                 // LOGIC FOR NON-COOPERATIVE SCHEDULING
+                se->inactive = 0;
         }
 
         printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
@@ -7707,6 +7708,21 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
+                // Logic for cooperative scheduling
+                // put the cooperative thread to the rightmost node of rq
+                if (unlikely(task_of(se)->tgid == sched_process_id) && 
+                                                entity_is_task(se)) {
+                        struct rb_node *last_node = __pick_last_entity(cfs_rq);
+                        if (last_node){
+                                u64 target_vruntime;
+                                target_vruntime = max(se->vruntime, last_se->vruntime);
+                                target_vruntime += 1;
+
+                                se->vruntime = target_vruntime;
+                                // trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
+                        }
+
+                }
 		put_prev_entity(cfs_rq, se);
 	}
 }
