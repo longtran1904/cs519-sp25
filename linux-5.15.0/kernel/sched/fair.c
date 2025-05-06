@@ -38,6 +38,7 @@ SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. f
         }
 
         printk(KERN_INFO "Cooperative scheduling process ID: %d\n", sched_process_id);
+        // trace_printk("Cooperative scheduling process ID: %d\n", sched_process_id);
         return 0;
 }
 
@@ -65,6 +66,7 @@ SYSCALL_DEFINE1(cooperative, int, enable)
         }
 
         printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
+        // trace_printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
         return 0;
 }
 
@@ -7718,7 +7720,10 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
                 // Logic for cooperative scheduling
                 // put the cooperative thread to the rightmost node of rq
                 if (unlikely(task_of(se)->tgid == sched_process_id) && 
-                                                entity_is_task(se)) {
+                                                entity_is_task(se) && 
+                                                se->inactive) {
+                        printk(KERN_INFO "coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
+                        // trace_printk("coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
                         struct sched_entity *last_se = __pick_last_entity(cfs_rq);
                         if (last_se){
                                 u64 target_vruntime;
@@ -7726,7 +7731,8 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
                                 target_vruntime += 1;
 
                                 se->vruntime = target_vruntime;
-                                trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
+                                printk(KERN_INFO "coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime)
+                                // trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
                         }
 
                 }
