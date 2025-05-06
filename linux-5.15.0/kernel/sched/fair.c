@@ -7726,7 +7726,7 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
                                 target_vruntime += 1;
 
                                 se->vruntime = target_vruntime;
-                                // trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
+                                trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
                         }
 
                 }
