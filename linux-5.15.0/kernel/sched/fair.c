@@ -65,7 +65,7 @@ SYSCALL_DEFINE1(cooperative, int, enable)
                 se->inactive = 0;
         }
 
-        printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
+        printk(KERN_INFO "Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
         // trace_printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
         return 0;
 }
@@ -4703,8 +4703,13 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	se = __pick_first_entity(cfs_rq);
 	delta = curr->vruntime - se->vruntime;
 
+        if (task_of(se)->tgid == sched_process_id && se->inactive){
+                printk(KERN_WARNING "[check_preempt_tick]: inactive task trying to preempt current!!!\n");
+                return;
+        }
+
         if (task_of(se)->tgid == sched_process_id && se->inactive && !curr->inactive){
-                printk(KERN_INFO "inactive task not preempting current!!!\n");
+                printk(KERN_WARNING "[check_preempt_tick]: inactive task not preempting current!!!\n");
                 // Do I need to inflate vruntime at this step too?
                 // otherwise, the inactive task will always be the first_entity
                 return;
@@ -7715,14 +7720,17 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 	struct sched_entity *se = &prev->se;
 	struct cfs_rq *cfs_rq;
 
+        trace_printk("[put_prev_task_fair]: de-scheduling task %d\n", prev->pid);
+
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
                 // Logic for cooperative scheduling
                 // put the cooperative thread to the rightmost node of rq
-                if (unlikely(task_of(se)->tgid == sched_process_id) && 
+
+                if (task_of(se)->tgid == sched_process_id && 
                                                 entity_is_task(se) && 
                                                 se->inactive) {
-                        printk(KERN_INFO "coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
+                        printk(KERN_WARNING "coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
                         // trace_printk("coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
                         struct sched_entity *last_se = __pick_last_entity(cfs_rq);
                         if (last_se){
@@ -7731,7 +7739,7 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
                                 target_vruntime += 1;
 
                                 se->vruntime = target_vruntime;
-                                printk(KERN_INFO "coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime)
+                                printk(KERN_WARNING "coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
                                 // trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
                         }
 
