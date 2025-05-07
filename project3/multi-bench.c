@@ -31,6 +31,7 @@ int thread_done[MAX_THREADS] = {0};
 int threads_joined = 0;
 int total_threads = 0;
 int coop_threads = 0;
+int sleep_time = 0;
 
 pthread_mutex_t done_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t done_cond = PTHREAD_COND_INITIALIZER;
@@ -112,13 +113,38 @@ void* thread_function(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-        if (argc != 3) {
-                fprintf(stderr, "Usage: %s <number_of_normal_threads> <number_of_inactive_threads>\n", argv[0]);
+        if (argc != 4) {
+                fprintf(stderr, "Usage: %s <number_of_normal_threads> <number_of_inactive_threads> <sleep_time>\n", argv[0]);
+                return EXIT_FAILURE;
+        }
+        total_threads = atoi(argv[1]);
+        coop_threads = atoi(argv[2]);
+
+        if (total_threads < 0 || coop_threads < 0) {
+                fprintf(stderr, "Invalid thread counts. Please enter non-negative integers for thread counts.\n");
                 return EXIT_FAILURE;
         }
 
-        total_threads = atoi(argv[1]);
-        coop_threads = atoi(argv[2]);
+        sleep_time = atoi(argv[3]);
+        if (sleep_time <= 0) {
+                fprintf(stderr, "Invalid sleep time. Please enter integer > 0.\n");
+                return EXIT_FAILURE;
+        }
+
+
+        // Define FILE and clear cache
+        FILE* fp = fopen("/proc/sys/vm/drop_caches", "w");
+        if (fp == NULL) {
+                perror("Failed to open /proc/sys/vm/drop_caches");
+                return EXIT_FAILURE;
+        }
+        if (fprintf(fp, "3\n") < 0) {
+                perror("Failed to write to /proc/sys/vm/drop_caches");
+                fclose(fp);
+                return EXIT_FAILURE;
+        }
+        fclose(fp);
+        printf("Cache cleared successfully.\n");
 
         // Enable cooperative scheduling
         if (syscall(SYS_enable_coop_sched, 1) < 0) {
@@ -144,9 +170,9 @@ int main(int argc, char* argv[]) {
 
         printf("Created %d normal threads.\nCreated %d coop threads\n", total_threads, coop_threads);
 
-        // Sleep 5s before turning off cooperative scheduling
-        printf("Waiting 5 seconds before turning off cooperative scheduling...\n");
-        sleep(5);
+        printf("Waiting %d seconds before turning off cooperative scheduling...\n", sleep_time);
+        sleep(sleep_time);
+
         for (int i = total_threads; i < total_threads + coop_threads; i++) {
                 if (infos[i].type == COOP_THREAD) {
                         if (syscall(SYS_set_thread_coop, infos[i].tid, 0) < 0) {
@@ -170,23 +196,34 @@ int main(int argc, char* argv[]) {
         
         printf("Cooperative scheduling disabled.\n");
 
+        double normal_avg_turnaround = 0.0;
+        double coop_avg_turnaround = 0.0;
+
         printf("Total:\n Normal threads: %d.\nCoop threads: %d\n", total_threads, coop_threads);
         for (int i = 0; i < total_threads + coop_threads; i++) {
-                // printf("Thread %2d: Start: %ld.%09ld, End: %ld.%09ld\n",
-                //         i,
-                //         infos[i].start_time.tv_sec, infos[i].start_time.tv_nsec,
-                //         infos[i].end_time.tv_sec, infos[i].end_time.tv_nsec);
-                if (i < total_threads)
-                        printf("Normal Thread %2d: Turnaround Time: %.9f seconds\n",
-                                i,
-                                (infos[i].end_time.tv_sec - infos[i].start_time.tv_sec) +
-                                (infos[i].end_time.tv_nsec - infos[i].start_time.tv_nsec) / 1e9);
-                else
-                        printf("Coop Thread %2d: Turnaround Time: %.9f seconds\n",
-                                i,
-                                (infos[i].end_time.tv_sec - infos[i].start_time.tv_sec) +
-                                (infos[i].end_time.tv_nsec - infos[i].start_time.tv_nsec) / 1e9);
+                double turnaround_time = (infos[i].end_time.tv_sec - infos[i].start_time.tv_sec) +
+                                         (infos[i].end_time.tv_nsec - infos[i].start_time.tv_nsec) / 1e9;
+
+                if (i < total_threads) {
+                        normal_avg_turnaround += turnaround_time;
+                        printf("Normal Thread %2d: Turnaround Time: %.9f seconds\n", i, turnaround_time);
+                } else {
+                        coop_avg_turnaround += turnaround_time;
+                        printf("Coop Thread %2d: Turnaround Time: %.9f seconds\n", i, turnaround_time);
+                }
         }
+
+        if (total_threads > 0) {
+                normal_avg_turnaround /= total_threads;
+        }
+        if (coop_threads > 0) {
+                coop_avg_turnaround /= coop_threads;
+        }
+
+        printf("Average Turnaround Time:\n");
+        printf(" Normal threads: %.9f seconds\n", normal_avg_turnaround);
+        printf(" Coop threads: %.9f seconds\n", coop_avg_turnaround);
+        printf("Total:\nNormal threads: %d\nCoop threads: %d\n", total_threads, coop_threads);
 
         return EXIT_SUCCESS;
 }
