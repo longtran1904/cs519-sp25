@@ -1172,7 +1172,7 @@ asmlinkage long sys_sysfs(int option,
 				unsigned long arg1, unsigned long arg2);
 asmlinkage long sys_fork(void);
 asmlinkage long sys_enable_coop_sched(int enable);
-asmlinkage long sys_cooperative(int enable);
+asmlinkage long sys_cooperative(int pid, int enable);
 
 /* obsolete: kernel/time/time.c */
 asmlinkage long sys_stime(__kernel_old_time_t __user *tptr);

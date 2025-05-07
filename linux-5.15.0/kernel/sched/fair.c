@@ -24,7 +24,27 @@
 #include <linux/kernel.h>
 #include <linux/syscalls.h>
 
+struct pid_waiter {
+        struct list_head list;
+        pid_t pid;
+        struct task_struct *task;
+};
+    
+struct cooperative_scheduler {
+        struct swait_queue_head wake_queue;
+        struct list_head waiting_threads_by_pid;
+        spinlock_t lock; // For protecting the list
+};
+
+static struct cooperative_scheduler my_coop_sched;
 int sched_process_id = 0;
+
+void init_cooperative_scheduler(void) {
+        init_swait_queue_head(&my_coop_sched.wake_queue);
+        INIT_LIST_HEAD(&my_coop_sched.waiting_threads_by_pid);
+        spin_lock_init(&my_coop_sched.lock);
+        printk(KERN_INFO "Cooperative scheduler initialized\n");
+}
 
 SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. for arguments
 {
@@ -32,40 +52,127 @@ SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. f
         if (enable) {
                 sched_process_id = current->tgid;
                 printk(KERN_INFO "Cooperative scheduling enabled\n");
+                init_cooperative_scheduler();
         } else {
                 sched_process_id = 0;
                 printk(KERN_INFO "Cooperative scheduling disabled\n");
         }
 
         printk(KERN_INFO "Cooperative scheduling process ID: %d\n", sched_process_id);
-        // trace_printk("Cooperative scheduling process ID: %d\n", sched_process_id);
+        trace_printk("Cooperative scheduling process ID: %d\n", sched_process_id);
         return 0;
 }
 
-SYSCALL_DEFINE1(cooperative, int, enable)
+long cooperative_yield(void)
 {
-        int pid = sched_process_id;
+        struct pid_waiter *waiter;
+    
+        waiter = kmalloc(sizeof(*waiter), GFP_KERNEL);
+        if (!waiter)
+            return -ENOMEM;
+    
+        waiter->pid = task_pid_nr(current);
+        waiter->task = current; // Store the user-space thread's task_struct
+    
+        spin_lock(&my_coop_sched.lock);
+        list_add_tail(&waiter->list, &my_coop_sched.waiting_threads_by_pid);
+        spin_unlock(&my_coop_sched.lock);
+    
+        set_current_state(TASK_INTERRUPTIBLE); // Put the user-space thread's task to sleep
+        schedule(); // Give up the CPU
+    
+        /* When woken up, we reach here */
+        spin_lock(&my_coop_sched.lock);
+        list_del(&waiter->list);
+        spin_unlock(&my_coop_sched.lock);
+        kfree(waiter);
+    
+        return 0; //
+}
 
-        if (pid == 0) {
+void activate_cooperative_thread(pid_t target_pid)
+{
+        struct pid_waiter *waiter;
+        bool found = false;
+
+        spin_lock(&my_coop_sched.lock);
+        list_for_each_entry(waiter, &my_coop_sched.waiting_threads_by_pid, list) {
+                if (waiter->pid == target_pid) {
+                        wake_up_process(waiter->task);
+                        found = true;
+                        break;
+                }
+        }
+        spin_unlock(&my_coop_sched.lock);
+
+        if (!found) {
+                printk(KERN_INFO "Cooperative thread with PID %d not found in wait queue.\n", target_pid);
+        }
+}
+
+SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
+{
+        struct task_struct* target;
+        if (sched_process_id == 0) {
                 printk(KERN_INFO "No cooperative scheduling process found\n");
                 return -1;
         }
+        
+        if (current->pid != pid)
+        {
+                // Security check if the caller is not the same as the target
+                rcu_read_lock();
+                target = find_task_by_vpid(pid);
+                if (!target){
+                        printk(KERN_INFO "Target process not found\n");
+                        rcu_read_unlock();
+                        return -ESRCH;
+                }
 
-        if (current->tgid != pid) {
+                get_task_struct(target);
+                rcu_read_unlock();
+
+                // Check if caller user has permission to modify the target thread
+                if (!uid_eq(current_user()->uid, target->real_cred->uid) &&
+                        !capable(CAP_SYS_NICE)) {
+                        put_task_struct(target);
+                        printk(KERN_INFO "Permission denied to modify thread %d\n", pid);
+                        return -EPERM;
+                }
+        }
+        else {
+                target = current;
+        }
+
+        // check if target->tgid is the same as sched_process_id before moving forward
+        if (target->tgid != sched_process_id) {
                 printk(KERN_INFO "Current process is not the cooperative scheduling process\n");
                 return -1;
         }
-        struct sched_entity *se = &current->se;
+
+        struct sched_entity *se = &target->se;
         if (enable) {
                 // LOGIC FOR COOPERATIVE SCHEDULING
+                // Set thread INTERRUPTIBLE
                 se->inactive = 1;
+                cooperative_yield();
         }
         else{
                 // LOGIC FOR NON-COOPERATIVE SCHEDULING
                 se->inactive = 0;
+                activate_cooperative_thread(target->pid);
         }
 
-        printk(KERN_INFO "Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
+        printk(KERN_INFO "Thread %d: [inactive: %d] cooperative scheduling mode = %s (set by thread %d)\n", 
+                target->pid, 
+                target->se.inactive, 
+                target->se.inactive ? "enabled" : "disabled",
+                current->pid);
+        trace_printk("Thread %d: [inactive: %d] cooperative scheduling mode = %s (set by thread %d)\n", 
+                target->pid, 
+                target->se.inactive, 
+                target->se.inactive ? "enabled" : "disabled",
+                current->pid);
         // trace_printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
         return 0;
 }
@@ -4703,18 +4810,6 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	se = __pick_first_entity(cfs_rq);
 	delta = curr->vruntime - se->vruntime;
 
-        if (task_of(se)->tgid == sched_process_id && se->inactive){
-                printk(KERN_WARNING "[check_preempt_tick]: inactive task trying to preempt current!!!\n");
-                return;
-        }
-
-        if (task_of(se)->tgid == sched_process_id && se->inactive && !curr->inactive){
-                printk(KERN_WARNING "[check_preempt_tick]: inactive task not preempting current!!!\n");
-                // Do I need to inflate vruntime at this step too?
-                // otherwise, the inactive task will always be the first_entity
-                return;
-        }
-
 	if (delta < 0)
 		return;
 
@@ -7720,30 +7815,11 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 	struct sched_entity *se = &prev->se;
 	struct cfs_rq *cfs_rq;
 
-        trace_printk("[put_prev_task_fair]: de-scheduling task %d\n", prev->pid);
-
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
                 // Logic for cooperative scheduling
                 // put the cooperative thread to the rightmost node of rq
 
-                if (task_of(se)->tgid == sched_process_id && 
-                                                entity_is_task(se) && 
-                                                se->inactive) {
-                        printk(KERN_WARNING "coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
-                        // trace_printk("coop_sched: Cooperative thread %d\n", task_of(se)->tgid);
-                        struct sched_entity *last_se = __pick_last_entity(cfs_rq);
-                        if (last_se){
-                                u64 target_vruntime;
-                                target_vruntime = max(se->vruntime, last_se->vruntime);
-                                target_vruntime += 1;
-
-                                se->vruntime = target_vruntime;
-                                printk(KERN_WARNING "coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
-                                // trace_printk("coop_sched: Inflated vruntime for PID %d to %llu\n", prev->pid, se->vruntime);
-                        }
-
-                }
 		put_prev_entity(cfs_rq, se);
 	}
 }

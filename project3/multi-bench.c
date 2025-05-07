@@ -17,6 +17,7 @@ enum thread_type {
 
 struct thread_info {
         int id;
+        int tid;
         struct timespec start_time;
         struct timespec end_time;
         double work_result;
@@ -75,9 +76,10 @@ void wait_and_join_all(int n) {
 
 void* coop_thread_function(void* arg) {
         struct thread_info* info = (struct thread_info*)arg;
+        info->tid = syscall(SYS_gettid);
         record_time(&info->start_time);
 
-        if (syscall(SYS_set_thread_coop, 1) < 0) {
+        if (syscall(SYS_set_thread_coop, info->tid, 1) < 0) {
             perror("set_thread_coop");
             return NULL;
         }
@@ -95,6 +97,7 @@ void* coop_thread_function(void* arg) {
 
 void* thread_function(void* arg) {
         struct thread_info* info = (struct thread_info*)arg;
+        info->tid = syscall(SYS_gettid);
         record_time(&info->start_time);
 
         volatile double count = 1;
@@ -140,6 +143,20 @@ int main(int argc, char* argv[]) {
         }
 
         printf("Created %d normal threads.\nCreated %d coop threads\n", total_threads, coop_threads);
+
+        // Sleep 5s before turning off cooperative scheduling
+        printf("Waiting 5 seconds before turning off cooperative scheduling...\n");
+        sleep(5);
+        for (int i = total_threads; i < total_threads + coop_threads; i++) {
+                if (infos[i].type == COOP_THREAD) {
+                        if (syscall(SYS_set_thread_coop, infos[i].tid, 0) < 0) {
+                                perror("set_thread_coop");
+                                return EXIT_FAILURE;
+                        }
+                }
+                infos[i].type = NORMAL_THREAD;
+        }
+        printf("Cooperative threads set to normal.\n");
 
         wait_and_join_all(total_threads + coop_threads);
 

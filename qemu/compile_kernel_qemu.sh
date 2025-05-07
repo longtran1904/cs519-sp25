@@ -18,8 +18,8 @@ mkdir -p $QEMU_KERNEL_DIR
 
 cd $KERNEL
 sudo cp def.config .config
-sudo make -j$PARA
-# sudo make modules -j$PARA
+sudo make -j$PARA # make changes for kernel cores
+# sudo make modules -j$PARA // make changes for kernel modules
 
 sudo cp ./arch/x86/boot/bzImage $QEMU_KERNEL_DIR/vmlinuz-$VER
 sudo cp System.map $QEMU_KERNEL_DIR/System.map-$VER
