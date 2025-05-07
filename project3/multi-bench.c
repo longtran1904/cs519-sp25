@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/syscall.h>
+#include <time.h>
+#include <linux/time.h>
 
 #define SYS_enable_coop_sched 449
 #define SYS_set_thread_coop 450
@@ -130,21 +132,6 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "Invalid sleep time. Please enter integer > 0.\n");
                 return EXIT_FAILURE;
         }
-
-
-        // Define FILE and clear cache
-        FILE* fp = fopen("/proc/sys/vm/drop_caches", "w");
-        if (fp == NULL) {
-                perror("Failed to open /proc/sys/vm/drop_caches");
-                return EXIT_FAILURE;
-        }
-        if (fprintf(fp, "3\n") < 0) {
-                perror("Failed to write to /proc/sys/vm/drop_caches");
-                fclose(fp);
-                return EXIT_FAILURE;
-        }
-        fclose(fp);
-        printf("Cache cleared successfully.\n");
 
         // Enable cooperative scheduling
         if (syscall(SYS_enable_coop_sched, 1) < 0) {

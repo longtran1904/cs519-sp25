@@ -16,7 +16,7 @@ all: $(TARGET)
 
 # Build the target
 $(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -lpthread
 
 # Clean up build files
 clean:

@@ -59,7 +59,7 @@ SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. f
         }
 
         printk(KERN_INFO "Cooperative scheduling process ID: %d\n", sched_process_id);
-        trace_printk("Cooperative scheduling process ID: %d\n", sched_process_id);
+        // trace_printk("Cooperative scheduling process ID: %d\n", sched_process_id);
         return 0;
 }
 
@@ -93,20 +93,20 @@ long cooperative_yield(void)
 void activate_cooperative_thread(pid_t target_pid)
 {
         struct pid_waiter *waiter;
-        bool found = false;
+        int found = 0;
 
         spin_lock(&my_coop_sched.lock);
         list_for_each_entry(waiter, &my_coop_sched.waiting_threads_by_pid, list) {
                 if (waiter->pid == target_pid) {
                         wake_up_process(waiter->task);
-                        found = true;
+                        found = 1;
                         break;
                 }
         }
         spin_unlock(&my_coop_sched.lock);
 
         if (!found) {
-                printk(KERN_INFO "Cooperative thread with PID %d not found in wait queue.\n", target_pid);
+                printk(KERN_ERR "Cooperative thread with PID %d not found in wait queue.\n", target_pid);
         }
 }
 
@@ -114,7 +114,7 @@ SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
 {
         struct task_struct* target;
         if (sched_process_id == 0) {
-                printk(KERN_INFO "No cooperative scheduling process found\n");
+                printk(KERN_ERR "No cooperative scheduling process found\n");
                 return -1;
         }
         
@@ -124,7 +124,7 @@ SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
                 rcu_read_lock();
                 target = find_task_by_vpid(pid);
                 if (!target){
-                        printk(KERN_INFO "Target process not found\n");
+                        printk(KERN_ERR "Target process not found\n");
                         rcu_read_unlock();
                         return -ESRCH;
                 }
@@ -136,7 +136,7 @@ SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
                 if (!uid_eq(current_user()->uid, target->real_cred->uid) &&
                         !capable(CAP_SYS_NICE)) {
                         put_task_struct(target);
-                        printk(KERN_INFO "Permission denied to modify thread %d\n", pid);
+                        printk(KERN_ERR "Permission denied to modify thread %d\n", pid);
                         return -EPERM;
                 }
         }
@@ -146,7 +146,7 @@ SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
 
         // check if target->tgid is the same as sched_process_id before moving forward
         if (target->tgid != sched_process_id) {
-                printk(KERN_INFO "Current process is not the cooperative scheduling process\n");
+                printk(KERN_ERR "Current process is not the cooperative scheduling process\n");
                 return -1;
         }
 
@@ -168,11 +168,11 @@ SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
                 target->se.inactive, 
                 target->se.inactive ? "enabled" : "disabled",
                 current->pid);
-        trace_printk("Thread %d: [inactive: %d] cooperative scheduling mode = %s (set by thread %d)\n", 
-                target->pid, 
-                target->se.inactive, 
-                target->se.inactive ? "enabled" : "disabled",
-                current->pid);
+        // trace_printk("Thread %d: [inactive: %d] cooperative scheduling mode = %s (set by thread %d)\n", 
+        //         target->pid, 
+        //         target->se.inactive, 
+        //         target->se.inactive ? "enabled" : "disabled",
+        //         current->pid);
         // trace_printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
         return 0;
 }
