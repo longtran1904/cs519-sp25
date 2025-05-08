@@ -1,88 +1,52 @@
 #### Coding and other resources for CS 519
 
-CS 519 Instructions
+Cooperative Scheduler
 ------------------
 
-### QEMU Set Up
-First time set up cloudlab, run:
-`sudo apt update`
-
-Always run this command to use qemu scripts:
-`source ./qemu/setvars.sh`
-
-### First time set up QEMU:
-```
-./qemu/qemu-create.sh
-```
-This script will drop you to the disk image shell.
-Install system core services & packages
-```
-apt update
-apt install -y bash coreutils vim net-tools iputils-ping
-apt install -y login passwd init systemd systemd-sysv
-```
-
-Install gdb for user-space program debug
-`apt install gdb`
-
-Set password for the virtualized ubuntu disk image
-`passwd`
-
-Exit the disk image shell
-`exit`
-
-### To apply the patch on a new kernel
-
-Download a new kernel from source
-```
-rm -rf linux-5.15.0 # Remove modified kernel
-sudo apt-get update
-sudo sed -i 's/# deb-src/deb-src/' /etc/apt/sources.list
-sudo apt update
-apt source linux-image-unsigned-$(uname -r)
-```
-
-Apply patches to the new kernel
-`./apply_batch`
-
-### Compile kernel for the first time
+### 1. Apply patch
+If you've not installed custom kernel
 ```
 cd linux-5.15.0
+./patch/apply_patch.sh
+
 ../project1/install_packages.sh
 ../project1/compile_os_nopackages.sh
+
+sudo reboot
 ```
 
-### Load kernel and use QEMU
-
-Remember to setvar before using QEMU scripts:
+If you've already installed custom kernel
 ```
 cd linux-5.15.0
-../qemu/setvars.sh
+./patch/apply_patch.sh
+
+../project1/compile_os_quick.sh
+sudo reboot
 ```
 
-Compile kernel and load kernel to qemu directory:
+The following steps help reproduce the results in the report:
+- https://docs.google.com/document/d/1omEWKq6jcyHEBj425BckKszd7eH5rvyHklaviXzCv5Y/edit?usp=sharing
+
+### 2. Set up matrix multiplication
 ```
-cd linux-5.15.0
-../qemu/compile_kernel_qemu.sh
+cd project1-part2
+make clean
+make
+
+cp IPC-shmem ../appbench/IPC-shmem
+
+cd appbench
+touch shmfile
 ```
 
-Run QEMU with new kernel image:
-(This script mount file disk, recompile project1/test and copy into file disk, then run QEMU image)
+### 3. Set up benchmark
 ```
-../qemu/run_qemu.sh
-```
+cd project3
+make clean
+make
 
-### In QEMU, how to test user-space program:
-login using username: root - password you set before
-```
-cd /
-./test
+cp multi-bench ../appbench/multi-bench
 ```
 
-If you want to see details of extents:
-`dmesg`
-
-To exit:
-`Ctrl+A X`
-
-if you want to change user-space test program, change test.c in `project1/`, then run QEMU again `../qemu/run_qemu.sh`
+### 4. Run the experiment
+Configure the parameters and run `./co-run.sh`
