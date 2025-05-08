@@ -43,7 +43,6 @@ void init_cooperative_scheduler(void) {
         init_swait_queue_head(&my_coop_sched.wake_queue);
         INIT_LIST_HEAD(&my_coop_sched.waiting_threads_by_pid);
         spin_lock_init(&my_coop_sched.lock);
-        printk(KERN_INFO "Cooperative scheduler initialized\n");
 }
 
 SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. for arguments
@@ -57,9 +56,6 @@ SYSCALL_DEFINE1(enable_coop_sched, int, enable)  // use DEFINE1, DEFINE2, etc. f
                 sched_process_id = 0;
                 printk(KERN_INFO "Cooperative scheduling disabled\n");
         }
-
-        printk(KERN_INFO "Cooperative scheduling process ID: %d\n", sched_process_id);
-        // trace_printk("Cooperative scheduling process ID: %d\n", sched_process_id);
         return 0;
 }
 
@@ -87,7 +83,7 @@ long cooperative_yield(void)
         spin_unlock(&my_coop_sched.lock);
         kfree(waiter);
     
-        return 0; //
+        return 0;
 }
 
 void activate_cooperative_thread(pid_t target_pid)
@@ -104,10 +100,6 @@ void activate_cooperative_thread(pid_t target_pid)
                 }
         }
         spin_unlock(&my_coop_sched.lock);
-
-        if (!found) {
-                printk(KERN_ERR "Cooperative thread with PID %d not found in wait queue.\n", target_pid);
-        }
 }
 
 SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
@@ -154,26 +146,12 @@ SYSCALL_DEFINE2(cooperative, int, pid, int, enable)
         if (enable) {
                 // LOGIC FOR COOPERATIVE SCHEDULING
                 // Set thread INTERRUPTIBLE
-                se->inactive = 1;
                 cooperative_yield();
         }
         else{
                 // LOGIC FOR NON-COOPERATIVE SCHEDULING
-                se->inactive = 0;
                 activate_cooperative_thread(target->pid);
         }
-
-        printk(KERN_INFO "Thread %d: [inactive: %d] cooperative scheduling mode = %s (set by thread %d)\n", 
-                target->pid, 
-                target->se.inactive, 
-                target->se.inactive ? "enabled" : "disabled",
-                current->pid);
-        // trace_printk("Thread %d: [inactive: %d] cooperative scheduling mode = %s (set by thread %d)\n", 
-        //         target->pid, 
-        //         target->se.inactive, 
-        //         target->se.inactive ? "enabled" : "disabled",
-        //         current->pid);
-        // trace_printk("Thread %d: cooperative scheduling mode = %s\n", current->pid, enable ? "enabled" : "disabled");
         return 0;
 }
 
@@ -7817,9 +7795,6 @@ static void put_prev_task_fair(struct rq *rq, struct task_struct *prev)
 
 	for_each_sched_entity(se) {
 		cfs_rq = cfs_rq_of(se);
-                // Logic for cooperative scheduling
-                // put the cooperative thread to the rightmost node of rq
-
 		put_prev_entity(cfs_rq, se);
 	}
 }

@@ -5,7 +5,6 @@
 #include <signal.h>
 #include <sys/syscall.h>
 #include <time.h>
-#include <linux/time.h>
 
 #define SYS_enable_coop_sched 449
 #define SYS_set_thread_coop 450

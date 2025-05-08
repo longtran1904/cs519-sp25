@@ -530,7 +530,6 @@ struct sched_entity {
 	struct rb_node			run_node;
 	struct list_head		group_node;
 	unsigned int			on_rq;
-        unsigned int                    inactive;
 
 	u64				exec_start;
 	u64				sum_exec_runtime;
