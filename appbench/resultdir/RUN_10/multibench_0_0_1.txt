@@ -1,0 +1,15 @@
+Created 0 normal threads.
+Created 0 coop threads
+Waiting 1 seconds before turning off cooperative scheduling...
+Cooperative threads set to normal.
+All threads terminated.
+Cooperative scheduling disabled.
+Total:
+ Normal threads: 0.
+Coop threads: 0
+Average Turnaround Time:
+ Normal threads: 0.000000000 seconds
+ Coop threads: 0.000000000 seconds
+Total:
+Normal threads: 0
+Coop threads: 0

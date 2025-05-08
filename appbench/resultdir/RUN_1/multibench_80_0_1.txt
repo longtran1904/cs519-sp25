@@ -1,0 +1,175 @@
+Created 80 normal threads.
+Created 0 coop threads
+Waiting 1 seconds before turning off cooperative scheduling...
+Cooperative threads set to normal.
+Main: Thread 1 joined
+Main: Thread 52 joined
+Main: Thread 38 joined
+Main: Thread 74 joined
+Main: Thread 22 joined
+Main: Thread 18 joined
+Main: Thread 73 joined
+Main: Thread 51 joined
+Main: Thread 72 joined
+Main: Thread 60 joined
+Main: Thread 64 joined
+Main: Thread 36 joined
+Main: Thread 62 joined
+Main: Thread 48 joined
+Main: Thread 59 joined
+Main: Thread 43 joined
+Main: Thread 6 joined
+Main: Thread 63 joined
+Main: Thread 12 joined
+Main: Thread 79 joined
+Main: Thread 26 joined
+Main: Thread 24 joined
+Main: Thread 45 joined
+Main: Thread 0 joined
+Main: Thread 23 joined
+Main: Thread 27 joined
+Main: Thread 70 joined
+Main: Thread 30 joined
+Main: Thread 3 joined
+Main: Thread 4 joined
+Main: Thread 33 joined
+Main: Thread 10 joined
+Main: Thread 77 joined
+Main: Thread 35 joined
+Main: Thread 44 joined
+Main: Thread 40 joined
+Main: Thread 67 joined
+Main: Thread 29 joined
+Main: Thread 65 joined
+Main: Thread 68 joined
+Main: Thread 16 joined
+Main: Thread 76 joined
+Main: Thread 47 joined
+Main: Thread 50 joined
+Main: Thread 31 joined
+Main: Thread 25 joined
+Main: Thread 13 joined
+Main: Thread 11 joined
+Main: Thread 15 joined
+Main: Thread 58 joined
+Main: Thread 21 joined
+Main: Thread 42 joined
+Main: Thread 46 joined
+Main: Thread 54 joined
+Main: Thread 56 joined
+Main: Thread 66 joined
+Main: Thread 17 joined
+Main: Thread 78 joined
+Main: Thread 20 joined
+Main: Thread 55 joined
+Main: Thread 41 joined
+Main: Thread 53 joined
+Main: Thread 61 joined
+Main: Thread 49 joined
+Main: Thread 69 joined
+Main: Thread 8 joined
+Main: Thread 28 joined
+Main: Thread 5 joined
+Main: Thread 19 joined
+Main: Thread 37 joined
+Main: Thread 71 joined
+Main: Thread 14 joined
+Main: Thread 9 joined
+Main: Thread 32 joined
+Main: Thread 57 joined
+Main: Thread 75 joined
+Main: Thread 34 joined
+Main: Thread 2 joined
+Main: Thread 39 joined
+Main: Thread 7 joined
+All threads terminated.
+Cooperative scheduling disabled.
+Total:
+ Normal threads: 80.
+Coop threads: 0
+Normal Thread  0: Turnaround Time: 48.926182177 seconds
+Normal Thread  1: Turnaround Time: 41.802567411 seconds
+Normal Thread  2: Turnaround Time: 49.548612427 seconds
+Normal Thread  3: Turnaround Time: 48.985767963 seconds
+Normal Thread  4: Turnaround Time: 49.010847756 seconds
+Normal Thread  5: Turnaround Time: 49.450803913 seconds
+Normal Thread  6: Turnaround Time: 48.481233666 seconds
+Normal Thread  7: Turnaround Time: 49.603957131 seconds
+Normal Thread  8: Turnaround Time: 49.426028985 seconds
+Normal Thread  9: Turnaround Time: 49.497154805 seconds
+Normal Thread 10: Turnaround Time: 49.055646752 seconds
+Normal Thread 11: Turnaround Time: 49.201496748 seconds
+Normal Thread 12: Turnaround Time: 48.707457289 seconds
+Normal Thread 13: Turnaround Time: 49.151387286 seconds
+Normal Thread 14: Turnaround Time: 49.460488024 seconds
+Normal Thread 15: Turnaround Time: 49.188298593 seconds
+Normal Thread 16: Turnaround Time: 49.110696702 seconds
+Normal Thread 17: Turnaround Time: 49.249079479 seconds
+Normal Thread 18: Turnaround Time: 47.072598997 seconds
+Normal Thread 19: Turnaround Time: 49.459609167 seconds
+Normal Thread 20: Turnaround Time: 49.280089437 seconds
+Normal Thread 21: Turnaround Time: 49.221318728 seconds
+Normal Thread 22: Turnaround Time: 45.493393639 seconds
+Normal Thread 23: Turnaround Time: 48.920110238 seconds
+Normal Thread 24: Turnaround Time: 48.818771376 seconds
+Normal Thread 25: Turnaround Time: 49.177092854 seconds
+Normal Thread 26: Turnaround Time: 48.767746012 seconds
+Normal Thread 27: Turnaround Time: 48.933266916 seconds
+Normal Thread 28: Turnaround Time: 49.417875120 seconds
+Normal Thread 29: Turnaround Time: 49.091560063 seconds
+Normal Thread 30: Turnaround Time: 48.947953489 seconds
+Normal Thread 31: Turnaround Time: 49.141401969 seconds
+Normal Thread 32: Turnaround Time: 49.492715466 seconds
+Normal Thread 33: Turnaround Time: 48.991943127 seconds
+Normal Thread 34: Turnaround Time: 49.505749141 seconds
+Normal Thread 35: Turnaround Time: 49.060065269 seconds
+Normal Thread 36: Turnaround Time: 48.065231399 seconds
+Normal Thread 37: Turnaround Time: 49.469084928 seconds
+Normal Thread 38: Turnaround Time: 44.982741032 seconds
+Normal Thread 39: Turnaround Time: 49.552701245 seconds
+Normal Thread 40: Turnaround Time: 49.089682651 seconds
+Normal Thread 41: Turnaround Time: 49.346573096 seconds
+Normal Thread 42: Turnaround Time: 49.226808659 seconds
+Normal Thread 43: Turnaround Time: 48.328180349 seconds
+Normal Thread 44: Turnaround Time: 49.059320187 seconds
+Normal Thread 45: Turnaround Time: 48.885473395 seconds
+Normal Thread 46: Turnaround Time: 49.244017730 seconds
+Normal Thread 47: Turnaround Time: 49.107484771 seconds
+Normal Thread 48: Turnaround Time: 48.159726653 seconds
+Normal Thread 49: Turnaround Time: 49.371654110 seconds
+Normal Thread 50: Turnaround Time: 49.130405275 seconds
+Normal Thread 51: Turnaround Time: 47.206625968 seconds
+Normal Thread 52: Turnaround Time: 42.839731605 seconds
+Normal Thread 53: Turnaround Time: 49.341821269 seconds
+Normal Thread 54: Turnaround Time: 49.237623161 seconds
+Normal Thread 55: Turnaround Time: 49.318417891 seconds
+Normal Thread 56: Turnaround Time: 49.232103031 seconds
+Normal Thread 57: Turnaround Time: 49.491760130 seconds
+Normal Thread 58: Turnaround Time: 49.195905467 seconds
+Normal Thread 59: Turnaround Time: 48.209854664 seconds
+Normal Thread 60: Turnaround Time: 47.724580316 seconds
+Normal Thread 61: Turnaround Time: 49.346023649 seconds
+Normal Thread 62: Turnaround Time: 48.081965980 seconds
+Normal Thread 63: Turnaround Time: 48.598197970 seconds
+Normal Thread 64: Turnaround Time: 47.841795315 seconds
+Normal Thread 65: Turnaround Time: 49.077663427 seconds
+Normal Thread 66: Turnaround Time: 49.234479505 seconds
+Normal Thread 67: Turnaround Time: 49.090654312 seconds
+Normal Thread 68: Turnaround Time: 49.113510607 seconds
+Normal Thread 69: Turnaround Time: 49.415201525 seconds
+Normal Thread 70: Turnaround Time: 48.943799402 seconds
+Normal Thread 71: Turnaround Time: 49.482647495 seconds
+Normal Thread 72: Turnaround Time: 47.412024422 seconds
+Normal Thread 73: Turnaround Time: 47.117762761 seconds
+Normal Thread 74: Turnaround Time: 45.459396806 seconds
+Normal Thread 75: Turnaround Time: 49.508128963 seconds
+Normal Thread 76: Turnaround Time: 49.109589047 seconds
+Normal Thread 77: Turnaround Time: 49.041778434 seconds
+Normal Thread 78: Turnaround Time: 49.254362011 seconds
+Normal Thread 79: Turnaround Time: 48.706356811 seconds
+Average Turnaround Time:
+ Normal threads: 48.666297694 seconds
+ Coop threads: 0.000000000 seconds
+Total:
+Normal threads: 80
+Coop threads: 0

@@ -1,0 +1,175 @@
+Created 0 normal threads.
+Created 80 coop threads
+Waiting 20 seconds before turning off cooperative scheduling...
+Cooperative threads set to normal.
+Main: Thread 28 joined
+Main: Thread 11 joined
+Main: Thread 4 joined
+Main: Thread 12 joined
+Main: Thread 6 joined
+Main: Thread 16 joined
+Main: Thread 25 joined
+Main: Thread 21 joined
+Main: Thread 75 joined
+Main: Thread 13 joined
+Main: Thread 17 joined
+Main: Thread 48 joined
+Main: Thread 71 joined
+Main: Thread 58 joined
+Main: Thread 54 joined
+Main: Thread 8 joined
+Main: Thread 79 joined
+Main: Thread 34 joined
+Main: Thread 0 joined
+Main: Thread 15 joined
+Main: Thread 24 joined
+Main: Thread 35 joined
+Main: Thread 30 joined
+Main: Thread 20 joined
+Main: Thread 19 joined
+Main: Thread 31 joined
+Main: Thread 37 joined
+Main: Thread 10 joined
+Main: Thread 77 joined
+Main: Thread 76 joined
+Main: Thread 47 joined
+Main: Thread 49 joined
+Main: Thread 73 joined
+Main: Thread 40 joined
+Main: Thread 72 joined
+Main: Thread 27 joined
+Main: Thread 36 joined
+Main: Thread 42 joined
+Main: Thread 66 joined
+Main: Thread 57 joined
+Main: Thread 68 joined
+Main: Thread 2 joined
+Main: Thread 5 joined
+Main: Thread 70 joined
+Main: Thread 63 joined
+Main: Thread 44 joined
+Main: Thread 32 joined
+Main: Thread 9 joined
+Main: Thread 7 joined
+Main: Thread 18 joined
+Main: Thread 23 joined
+Main: Thread 26 joined
+Main: Thread 46 joined
+Main: Thread 22 joined
+Main: Thread 41 joined
+Main: Thread 3 joined
+Main: Thread 50 joined
+Main: Thread 53 joined
+Main: Thread 74 joined
+Main: Thread 52 joined
+Main: Thread 60 joined
+Main: Thread 45 joined
+Main: Thread 38 joined
+Main: Thread 62 joined
+Main: Thread 14 joined
+Main: Thread 69 joined
+Main: Thread 78 joined
+Main: Thread 1 joined
+Main: Thread 67 joined
+Main: Thread 64 joined
+Main: Thread 61 joined
+Main: Thread 43 joined
+Main: Thread 65 joined
+Main: Thread 56 joined
+Main: Thread 29 joined
+Main: Thread 55 joined
+Main: Thread 39 joined
+Main: Thread 59 joined
+Main: Thread 33 joined
+Main: Thread 51 joined
+All threads terminated.
+Cooperative scheduling disabled.
+Total:
+ Normal threads: 0.
+Coop threads: 80
+Coop Thread  0: Turnaround Time: 69.942450646 seconds
+Coop Thread  1: Turnaround Time: 71.049010213 seconds
+Coop Thread  2: Turnaround Time: 70.707880856 seconds
+Coop Thread  3: Turnaround Time: 70.906873526 seconds
+Coop Thread  4: Turnaround Time: 68.699159061 seconds
+Coop Thread  5: Turnaround Time: 70.731741182 seconds
+Coop Thread  6: Turnaround Time: 69.094692235 seconds
+Coop Thread  7: Turnaround Time: 70.831710224 seconds
+Coop Thread  8: Turnaround Time: 69.802305151 seconds
+Coop Thread  9: Turnaround Time: 70.822409313 seconds
+Coop Thread 10: Turnaround Time: 70.234370291 seconds
+Coop Thread 11: Turnaround Time: 68.641640078 seconds
+Coop Thread 12: Turnaround Time: 68.839278482 seconds
+Coop Thread 13: Turnaround Time: 69.578300338 seconds
+Coop Thread 14: Turnaround Time: 71.010156862 seconds
+Coop Thread 15: Turnaround Time: 69.981641449 seconds
+Coop Thread 16: Turnaround Time: 69.255713273 seconds
+Coop Thread 17: Turnaround Time: 69.582119857 seconds
+Coop Thread 18: Turnaround Time: 70.835225390 seconds
+Coop Thread 19: Turnaround Time: 70.187238154 seconds
+Coop Thread 20: Turnaround Time: 70.178115031 seconds
+Coop Thread 21: Turnaround Time: 69.322011666 seconds
+Coop Thread 22: Turnaround Time: 70.862878207 seconds
+Coop Thread 23: Turnaround Time: 70.842246971 seconds
+Coop Thread 24: Turnaround Time: 70.130674966 seconds
+Coop Thread 25: Turnaround Time: 69.264558311 seconds
+Coop Thread 26: Turnaround Time: 70.848346719 seconds
+Coop Thread 27: Turnaround Time: 70.555305429 seconds
+Coop Thread 28: Turnaround Time: 68.542765723 seconds
+Coop Thread 29: Turnaround Time: 71.282928409 seconds
+Coop Thread 30: Turnaround Time: 70.152012076 seconds
+Coop Thread 31: Turnaround Time: 70.196440384 seconds
+Coop Thread 32: Turnaround Time: 70.810903773 seconds
+Coop Thread 33: Turnaround Time: 71.414411980 seconds
+Coop Thread 34: Turnaround Time: 69.922402754 seconds
+Coop Thread 35: Turnaround Time: 70.136990761 seconds
+Coop Thread 36: Turnaround Time: 70.578886589 seconds
+Coop Thread 37: Turnaround Time: 70.207430968 seconds
+Coop Thread 38: Turnaround Time: 70.990698375 seconds
+Coop Thread 39: Turnaround Time: 71.339217642 seconds
+Coop Thread 40: Turnaround Time: 70.472842522 seconds
+Coop Thread 41: Turnaround Time: 70.899131395 seconds
+Coop Thread 42: Turnaround Time: 70.609608635 seconds
+Coop Thread 43: Turnaround Time: 71.229516321 seconds
+Coop Thread 44: Turnaround Time: 70.776733127 seconds
+Coop Thread 45: Turnaround Time: 70.976870189 seconds
+Coop Thread 46: Turnaround Time: 70.856130838 seconds
+Coop Thread 47: Turnaround Time: 70.334822507 seconds
+Coop Thread 48: Turnaround Time: 69.579548155 seconds
+Coop Thread 49: Turnaround Time: 70.415687892 seconds
+Coop Thread 50: Turnaround Time: 70.916578208 seconds
+Coop Thread 51: Turnaround Time: 71.446098566 seconds
+Coop Thread 52: Turnaround Time: 70.965929857 seconds
+Coop Thread 53: Turnaround Time: 70.929236042 seconds
+Coop Thread 54: Turnaround Time: 69.723312481 seconds
+Coop Thread 55: Turnaround Time: 71.295812939 seconds
+Coop Thread 56: Turnaround Time: 71.269343508 seconds
+Coop Thread 57: Turnaround Time: 70.693109136 seconds
+Coop Thread 58: Turnaround Time: 69.712984055 seconds
+Coop Thread 59: Turnaround Time: 71.363651327 seconds
+Coop Thread 60: Turnaround Time: 70.967091490 seconds
+Coop Thread 61: Turnaround Time: 71.201300428 seconds
+Coop Thread 62: Turnaround Time: 70.990807529 seconds
+Coop Thread 63: Turnaround Time: 70.762174741 seconds
+Coop Thread 64: Turnaround Time: 71.164871449 seconds
+Coop Thread 65: Turnaround Time: 71.262955350 seconds
+Coop Thread 66: Turnaround Time: 70.654078769 seconds
+Coop Thread 67: Turnaround Time: 71.111184321 seconds
+Coop Thread 68: Turnaround Time: 70.699446372 seconds
+Coop Thread 69: Turnaround Time: 71.020009418 seconds
+Coop Thread 70: Turnaround Time: 70.752792210 seconds
+Coop Thread 71: Turnaround Time: 69.666507817 seconds
+Coop Thread 72: Turnaround Time: 70.522912029 seconds
+Coop Thread 73: Turnaround Time: 70.456666739 seconds
+Coop Thread 74: Turnaround Time: 70.961212011 seconds
+Coop Thread 75: Turnaround Time: 69.538851214 seconds
+Coop Thread 76: Turnaround Time: 70.258364371 seconds
+Coop Thread 77: Turnaround Time: 70.236481795 seconds
+Coop Thread 78: Turnaround Time: 71.023566265 seconds
+Coop Thread 79: Turnaround Time: 69.828544366 seconds
+Average Turnaround Time:
+ Normal threads: 0.000000000 seconds
+ Coop threads: 70.448248871 seconds
+Total:
+Normal threads: 0
+Coop threads: 80
