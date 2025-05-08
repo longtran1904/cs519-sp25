@@ -33,6 +33,13 @@ cd project1-part2
 make clean
 make
 
+touch shmfile
+<> Activate huge page for shared memory
+sudo sh -c "echo 1000 > /proc/sys/vm/nr_hugepages" 
+
+<> if get errors from semctl, please try:
+`touch semfile`
+
 cp IPC-shmem ../appbench/IPC-shmem
 
 cd appbench
