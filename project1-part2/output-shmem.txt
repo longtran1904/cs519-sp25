@@ -1,0 +1,40 @@
+Input size: 10000 rows, 10000 columns
+Total cores: 2
+Total runtime: 849.961173 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 4
+Total runtime: 303.024478 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 6
+Total runtime: 189.100188 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 8
+Total runtime: 137.994135 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 10
+Total runtime: 158.224481 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 12
+Total runtime: 131.889141 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 14
+Total runtime: 116.196121 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 16
+Total runtime: 101.958130 seconds
+
+

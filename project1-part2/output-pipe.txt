@@ -1,0 +1,40 @@
+Input size: 10000 rows, 10000 columns
+Total cores: 2
+Time for matmul: 745.246918 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 4
+Time for matmul: 265.501074 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 6
+Time for matmul: 167.638286 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 8
+Time for matmul: 125.376602 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 10
+Time for matmul: 152.635048 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 12
+Time for matmul: 125.419044 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 14
+Time for matmul: 109.657585 seconds
+
+
+Input size: 10000 rows, 10000 columns
+Total cores: 16
+Time for matmul: 96.851805 seconds
+
+

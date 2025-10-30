@@ -15,6 +15,8 @@
 #include <sys/time.h>
 #include "queue.h"
 #include <assert.h>
+#include <sys/wait.h>
+
 
 #define RESET   "\033[0m"
 #define RED     "\033[31m"      /* Red */
@@ -28,6 +30,7 @@
 //Add all your global variables and definitions here.
 #define MATRIX_SIZE 1000
 #define PIPE_LIMIT 65536
+int cores;
 
 // Define union semun before using it in semctl()
 union semun {
@@ -46,7 +49,7 @@ void semaphore_init(int sem_id, int sem_num, int init_value)
         exit(1);
     }
 
-    printf(RED "Semaphore created with ID: %d" RESET "\n", sem_id);
+    if (DEBUG) printf(RED "Semaphore created with ID: %d" RESET "\n", sem_id);
 }
 
 void semaphore_release(int sem_id, int sem_num)
@@ -117,6 +120,15 @@ void pin_cpu(int core, int pid){
     if (DEBUG) printf(GREEN "pinned child pid %d to core %d" RESET "\n", pid, core);
 }
 
+void transpose(int *b, int size){
+    for (int i = 0; i < size; i++)
+        for (int j = i + 1; j < size; j++){
+            int tmp = b[i*size + j];
+            b[i*size + j] = b[j*size + i];
+            b[j*size + i] = tmp;
+        }
+}
+
 ssize_t write_all(int fd, const void *buf, size_t count) {
     size_t total_written = 0;
     const char *ptr = buf;
@@ -124,9 +136,9 @@ ssize_t write_all(int fd, const void *buf, size_t count) {
         ssize_t written = write(fd, ptr + total_written, count - total_written);
         if (written <= 0) return written; // Handle error
         total_written += written;
-        printf("writting ... %d bytes ...\n", total_written);
+        // printf("writting ... %ld bytes ...\n", total_written);
     }
-    printf("total written: %d bytes\n", total_written);
+    // printf("total written: %ld bytes\n", total_written);
     return total_written;
 }
 
@@ -138,33 +150,52 @@ ssize_t read_all(int fd, void *buf, size_t count) {
         ssize_t n = read(fd, ptr + total_read, count - total_read);
         if (n <= 0) return n; // Handle EOF or error
         total_read += n;
-        printf("reading ... %d bytes ...\n", total_read);
+        // printf("reading ... %ld bytes ...\n", total_read);
 
     }
-    printf("total read: %d bytes\n", total_read);
+    // printf("total read: %ld bytes\n", total_read);
     return total_read;
 }
 
-ssize_t read_large_files(int fd_read, int fd_write, void* buf, size_t count){
+ssize_t read_large_files(int fd_read, int fd_write, void* buf, size_t count, int sem_id){
 
     int total_fragments;
     if (read(fd_read, &total_fragments, sizeof(int)) < 0){
         perror("Can't read total fragments number");
         exit(EXIT_FAILURE);
     }
+    char ack = '1';
+    if (write(fd_write, &ack, sizeof(char)) == -1){ // Confirm number of fragments
+        perror("IPC acknowledgement error");
+        exit(EXIT_FAILURE);
+    }
+
     int frag[PIPE_LIMIT];
     int to_read;
     ssize_t readBytes;
     ssize_t totalReadBytes = 0;
-    for (int i = 0; i < total_fragments; i++){
+    while (total_fragments){
         to_read = (count < PIPE_LIMIT ? count : PIPE_LIMIT);
         readBytes = read_all(fd_read, frag, to_read);
         if (readBytes < 0) return readBytes; // Handle Error
+        if (DEBUG) printf("[PARENT]: Received number of frags to retrieve\n");
+
+        count -= to_read;   
+        // copy fragments to buffer
+        semaphore_reserve(sem_id, 0);
+        memcpy(buf + totalReadBytes, frag, readBytes);
+        semaphore_release(sem_id, 0);
 
         totalReadBytes += readBytes;
-        count -= to_read;
-        // copy fragments to buffer
-        memcpy(buf + totalReadBytes, frag, readBytes);
+        total_fragments--;
+
+        if (DEBUG) printf("[PARENT]: Sending ack - received frag\n");
+        // send ack to writer
+        if (total_fragments) 
+            if (write(fd_write, &ack, sizeof(char)) == -1){ // Received fragment
+                perror("IPC acknowledgement error");
+                exit(EXIT_FAILURE);
+            }
     }
     return totalReadBytes;
 }
@@ -176,28 +207,49 @@ ssize_t write_large_files(int fd_read, int fd_write, void* buf, size_t count){
         perror("Can't write total fragments number");
         exit(EXIT_FAILURE);
     }
-    int frag[PIPE_LIMIT];
-    int to_write;
-    ssize_t writtenBytes;
-    ssize_t totalWrittenBytes = 0;
-
-    for (int i = 0; i < total_fragments; i++){
-        to_write = (count < PIPE_LIMIT ? count : PIPE_LIMIT); // Write maximum of PIPE LIMIT
-        writtenBytes = write_all(fd_write, frag, to_write);
-        if (writtenBytes < 0) return writtenBytes; // Handle Error
-
-        totalWrittenBytes += writtenBytes;
-        count -= to_write;
-        // copy fragments to buffer
-        memcpy(buf + totalWrittenBytes, frag, writtenBytes);
+    char ack;
+    if (DEBUG) printf("[CHILD]: Waiting ack for number of frags...\n");
+    if (read(fd_read, &ack, sizeof(char)) == -1){
+        perror("IPC acknowledgement error");
+        exit(EXIT_FAILURE);
     }
-    return totalWrittenBytes;
+    if (ack == '1'){
+        int frag[PIPE_LIMIT];
+        int to_write;
+        ssize_t writtenBytes;
+        ssize_t totalWrittenBytes = 0;
+
+        while (total_fragments){
+            to_write = (count < PIPE_LIMIT ? count : PIPE_LIMIT); // Write maximum of PIPE LIMIT
+            memcpy(frag, buf + totalWrittenBytes, to_write); // copy content to frag buffer
+            writtenBytes = write_all(fd_write, frag, to_write);
+            if (writtenBytes < 0) return writtenBytes; // Handle Error
+
+            totalWrittenBytes += writtenBytes;
+            count -= to_write;
+            total_fragments--;
+
+            if (DEBUG) printf("[CHILD] Waiting ack for received frag before proceeding to next frag...\n");
+            if (total_fragments) 
+                if (read(fd_read, &ack, sizeof(char)) == -1 && ack != '1'){
+                    perror("Can't get acknowledgement from reader for fragments");
+                    exit(EXIT_FAILURE);
+                }
+            
+        }
+        if (DEBUG) printf(GREEN "[CHILD] FINISHED MESSAGE" RESET "\n");
+        return totalWrittenBytes;
+    }
+    return -1; // No acknowledgement from reader
+    // Ack Success
+    
 }
 
 void matmul_IPC(int *a, int *b, int *c, int size){
     // Check system's number of cores
-    int cores = sysconf(_SC_NPROCESSORS_CONF);
-    if (DEBUG) printf(YELLOW "cores: %d" RESET "\n", cores);
+    // int cores = sysconf(_SC_NPROCESSORS_CONF);
+    if (!cores) cores = sysconf(_SC_NPROCESSORS_CONF);
+    printf("Total cores: %d\n", cores);
 
     pid_t main_pid = getpid();
     cpu_set_t mask;
@@ -240,7 +292,7 @@ void matmul_IPC(int *a, int *b, int *c, int size){
 
     // Create semaphore for IPC sync
     key_t key = ftok("semfile", 65);  // Generate a key
-    int sem_id = semget(key, 2, 0666 | IPC_CREAT);  // Create a semaphore set with two semaphore
+    int sem_id = semget(key, 1, 0666 | IPC_CREAT);  // Create a semaphore set with two semaphore
 
     if (sem_id == -1) {
         perror("semget failed");
@@ -248,8 +300,18 @@ void matmul_IPC(int *a, int *b, int *c, int size){
     }
 
     semaphore_init(sem_id, 0, 1);    
-    semaphore_init(sem_id, 1, 1);
 
+    transpose(b, size); // Optimization for fitting data into cache line
+    
+    if (DEBUG) {
+        printf("Printing transposed b: \n");
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+                printf("%d ", b[i * size + j]);
+            printf("\n");
+        }
+    }
     int *pd = (int*) malloc(cores * 4 * sizeof(int));
     for (int i = 1; i < cores; i++)
         if ((pipe(pd+(i*4)) == -1) || (pipe(pd+(i*4)+2) == -1)){
@@ -271,7 +333,7 @@ void matmul_IPC(int *a, int *b, int *c, int size){
         else if (pid[i] == 0){ // Child process
             pin_cpu(i, getpid());
             if (DEBUG) printf(GREEN"fork succeeded - pinned to cpu" RESET "\n");
-            if (DEBUG) printf("Hello world from child pid: %d\n", getpid());
+            // if (DEBUG) printf("Hello world from child pid: %d\n", getpid());
             int rows;
             int readBytes = read_all(pd[i*4], &rows, sizeof(int));
             // if (DEBUG) printf("Finished reading rows\n");
@@ -289,7 +351,7 @@ void matmul_IPC(int *a, int *b, int *c, int size){
                     {
                         int sum = 0;
                         for (int k = 0; k < size; k++) {
-                            sum += a[x * size + k] * b[k * size + y];
+                            sum += a[x * size + k] * b[y * size + k];
                         }
                         partial_res[x * size + y] = sum;
                     }
@@ -305,7 +367,8 @@ void matmul_IPC(int *a, int *b, int *c, int size){
                 // }
                 // Write back to main process
                 // semaphore_reserve(sem_id, 1);
-                ssize_t writeBytes = write_large_files(pd[i*4+2], pd[i*4+3], partial_res, rows * size * sizeof(int));
+                ssize_t writeBytes = write_large_files(pd[i*4], pd[i*4+3], partial_res, rows * size * sizeof(int));
+                if (DEBUG) printf(YELLOW"[CHILD] Finished write_large_file... child process %d, transferred %d bytes" RESET "\n", i, writeBytes);
                 // ssize_t writeBytes = write_all(pd[i*4+3], partial_res, rows * size * sizeof(int));
                 // semaphore_release(sem_id, 1);
                 if (writeBytes <= 0){
@@ -316,21 +379,9 @@ void matmul_IPC(int *a, int *b, int *c, int size){
                 // if (DEBUG) printf(YELLOW "Child process %d - pid %d - %d rows - wrote %zd bytes to pipe" RESET "\n", i, getpid(), writeBytes);
                 free(partial_res);
             }
+            if (DEBUG) printf(YELLOW "Child %d exiting process ..." RESET "\n", i);
             _exit(0);
         }
-    }
-
-    if (DEBUG){
-        printf("List of child processes: \n");
-        for (int i = 1; i < cores; i++){
-            if (pid[i] <= 0)
-            {
-                fprintf(stderr, "A child is not successfully created\n");
-                exit(EXIT_FAILURE);
-            }
-            printf("Child process %d - \n", i);
-        }
-         printf("All worker calculating matrix ...\n");    
     }
     
     // split the work between processes
@@ -341,77 +392,101 @@ void matmul_IPC(int *a, int *b, int *c, int size){
 
     // Assign tasks
     for (int i = 1; i < cores; i++){
-        if (DEBUG) printf(YELLOW "Writing task to children process %d - %d" RESET "\n", i, pd[i*4+1]);
+        if (DEBUG) printf(YELLOW "Writing task to children process %d - pid %d" RESET "\n", i, pid[i]);
         if (write_all(pd[i*4+1], (i == cores - 1) ? &last_rows : &num_rows, sizeof(int)) <= 0){
             perror("Assign tasks to children failed");
             exit(EXIT_FAILURE);
         }
     }
 
+    // Synchronize results from child workers
     int status;
     pid_t wpid;
-    int num_read;
-    int total_recv = 0;
-
-    for (int i = 1; i < cores; i++){
-        printf("Waiting for child process %d ", i);
-        printf("- pid %d \n", pid[i]);
-        if (waitpid(pid[i], &status, 0) == -1) 
-            perror("waitpid failed");
+    int pid_count = cores-1;
+    int done[cores];
+    memset(done, 0, cores * sizeof(int));
+    while (pid_count){
+        if (DEBUG) printf(RED "PID_COUNT LEFT: %d" RESET "\n", pid_count);
+        for (int i = 1; i < cores; i++){
+            if (DEBUG){
+                printf("num of cores: %ld - current iteration: %d\n", cores, i);
+                printf("Waiting for child process %d ", i);
+                printf("- pid %d \n", pid[i]);
+            }
             
-        int buffer_size = size;
-        if (i == cores - 1) buffer_size *= last_rows;
-        else buffer_size *= num_rows;
-
-        if (status == 0){ // Child exitted successfully
-            int buffer[buffer_size]; // max size of buffer = last_rows
-            // semaphore_reserve(sem_id, 1);
-            ssize_t readBytes = read_large_files(pd[i*4+2], pd[i*4+3], buffer, buffer_size * sizeof(int));
-            // ssize_t readBytes = read_all(pd[i*4+2], buffer, buffer_size * sizeof(int));
-            // semaphore_release(sem_id, 1);
-
-            if (readBytes <= 0){
-                perror("Read from worker failed");
+            if ((wpid = waitpid(pid[i], &status, WNOHANG)==-1))
+            {
+                perror("waitpid failed");
                 exit(EXIT_FAILURE);
             }
-
-            printf(YELLOW "Finished reading large files. Child process %d, pid %d, readBytes %zd" RESET "\n", i, pid[i], readBytes);
-
-            if (DEBUG) printf("synchronizing final results\n");
-            semaphore_reserve(sem_id, 0);
-            memcpy(c + (i-1)*num_rows*size, buffer, buffer_size * sizeof(int)); 
-            semaphore_release(sem_id, 0);
-            if (DEBUG) printf(GREEN "shared array synchronized" RESET "\n");
-            close(pd[i*4+3]);
-            close(pd[i*4+2]);
-            close(pd[i*4+1]);
-            close(pd[i*4]);
-
-        } else if (status == -1) {// Child exit code
-                fprintf(stderr, "Child process %d exitted with erro \n", i);
-                exit(EXIT_FAILURE);
+        
+            if (wpid == 0 && !done[i]){ // WNOHANG returns 0 if child not terminated
+                if (DEBUG) printf("Child process %d - pid %d blocking ... Reading from child process\n", i, pid[i]);
+                int buffer_size = size;
+                if (i == cores - 1) buffer_size *= last_rows;
+                else buffer_size *= num_rows;
+                int c_pos = (i-1)*num_rows*size;
+                ssize_t readBytes = read_large_files(pd[i*4+2], pd[i*4+1], (int*)(c+c_pos), buffer_size * sizeof(int), sem_id);
+                
+                if (readBytes <= 0){
+                    perror("Read from worker failed");
+                    exit(EXIT_FAILURE);
+                }
+                if (DEBUG) printf(YELLOW"[PARENT] Finished write_large_file... child process %d, transferred %d bytes" RESET "\n", i, readBytes);
+    
+                if (DEBUG) printf(GREEN "shared array synchronized" RESET "\n");
+                // if (DEBUG){
+                //     printf("Print C after every synchronization\n");    
+                //     for (int x = 0; x < size; x++)
+                //     {
+                //         for (int y = 0; y < size; y++)
+                //             printf("%d ", c[x * size + y]);    
+                //         printf("\n");
+                //     }
+                // }
+                
+                // free(buffer);
+                done[i] = 1;
+                pid_count--;
+                close(pd[i*4+3]);
+                close(pd[i*4+2]);
+                close(pd[i*4+1]);
+                close(pd[i*4]);
+                // printf("num of cores: %d - current iteration: %d\n", cores, i);
+            } else if (wpid == pid[i]) {
+                // WNHOHANG returns pid when child terminated
+                if (WIFEXITED(status)) {
+                    printf("Child exited with status %d\n", WEXITSTATUS(status));
+                } else if (WIFSIGNALED(status)) {
+                    printf("Child was terminated by signal %d\n", WTERMSIG(status));
+                }
+            } else {
+                // An error occurred
+                perror("waitpid");
+                break;
+            }
         }
     }
+    
 
     // Cleanup: Remove the semaphore
     free(pid);
     free(pd);
     semctl(sem_id, 0, IPC_RMID);
-    printf("Semaphore removed.\n");
-    return 0;
+    if (DEBUG) printf("Semaphore removed.\n");
 }
 
 
 int main(int argc, char const *argv[])
 {
     // Check if the user provided at least one argument
-    if (argc < 2) {
+    if (argc < 3) {
         printf("Usage: %s <input>\n", argv[0]);
         return 1;
     }
 
     int N = atoi(argv[1]);
-    printf("Matrix size: %dx%d\n", N, N);
+    printf("Input size: %d rows, %d columns\n", N, N);
 
     // Allocate memory for matrices A, B, and C
     int *A = (int *)malloc(N * N * sizeof(int));
@@ -430,10 +505,14 @@ int main(int argc, char const *argv[])
             B[i * N + j] = 1;
             C[i * N + j] = 0;  // initialize C to zero
         }
+        B[i*N] = 3;
     }
 
     if (DEBUG) printf("Initialized matrices A B C\n");
     if (DEBUG) printf("starts running matmul_IPC\n");
+    if (argv[2])
+        cores = atoi(argv[2]);
+
     struct timeval start, end;
     gettimeofday(&start,NULL);
     if (strcmp(argv[2],"single") == 0)
@@ -446,14 +525,14 @@ int main(int argc, char const *argv[])
     // It is recommended to redirect the output to a file.
     // Example: ./program > output.txt
 
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            printf("%d ", C[i * N + j]);
+    if (DEBUG)
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                printf("%d ", C[i * N + j]);
+            }
+            printf("\n");
         }
-        printf("\n");
-    }
-    printf("Time for matmul: %f\n seconds", getdetlatimeofday(&start, &end));
-
+    printf("Time for matmul: %f seconds\n", getdetlatimeofday(&start, &end));
 
     // Free allocated memory
     free(A);
